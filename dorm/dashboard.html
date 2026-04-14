@@ -3,79 +3,326 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard</title>
+  <title>Dashboard - 智慧宿舍系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/styles.css">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="./assets/app.js"></script>
+  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-  <div id="page"></div>
 
-  <script>
-    document.getElementById('page').innerHTML =
-      layoutStart('dashboard', '首頁 Dashboard') +
-      `
-      <div class="p-6 max-w-7xl mx-auto">
-        <div class="mb-8">
-          <h1 class="text-3xl font-semibold text-gray-900 mb-2">${appState.user.name}</h1>
-          <p class="text-gray-600">${appState.user.room}｜${appState.user.studentId}</p>
-        </div>
+<div id="page">
+  <div class="flex items-center justify-center min-h-screen flex-col gap-4 text-gray-400">
+    <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <p>載入中...</p>
+  </div>
+</div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          ${mock.stats.map(stat => `
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
-              <div class="flex items-start justify-between mb-4">
-                <div class="${stat.color} p-3 rounded-lg">
-                  <i data-lucide="${stat.icon}" class="w-6 h-6 text-white"></i>
-                </div>
-              </div>
-              <h3 class="text-gray-600 text-sm mb-1">${stat.title}</h3>
-              <div class="flex items-baseline gap-2">
-                <span class="text-2xl font-semibold text-gray-900">${stat.value}</span>
-                <span class="text-gray-500 text-sm">${stat.unit}</span>
-              </div>
-            </div>
-          `).join('')}
-        </div>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import {
+    getFirestore, doc, collection, onSnapshot, getDoc, getDocs
+  } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">近期活動</h2>
-            <div class="space-y-4">
-              ${mock.recentActivities.map(a => `
-                <div class="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50">
-                  <div class="${a.color} p-2 rounded-lg">
-                    <i data-lucide="${a.icon}" class="w-5 h-5"></i>
-                  </div>
-                  <div>
-                    <p class="text-gray-900 font-medium">${a.title}</p>
-                    <p class="text-gray-600 text-sm mt-1">${a.description}</p>
-                    <p class="text-gray-500 text-sm mt-2">${a.time}</p>
-                  </div>
-                </div>
-              `).join('')}
-            </div>
-          </div>
+  const firebaseConfig = {
+    apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
+    authDomain: "smartdorm-3ab79.firebaseapp.com",
+    projectId: "smartdorm-3ab79",
+    storageBucket: "smartdorm-3ab79.firebasestorage.app",
+    messagingSenderId: "240227925869",
+    appId: "1:240227925869:web:5a71f95a2f18bef1972464"
+  };
 
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">快捷入口</h2>
-            <div class="space-y-3">
-              <a href="./room-control.html" class="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50">房間控制</a>
-              <a href="./energy.html" class="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50">能源監控</a>
-              <a href="./package.html" class="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50">包裹管理</a>
-              <a href="./maintenance.html" class="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50">維修報修</a>
-            </div>
-          </div>
-        </div>
+  const firebaseApp = initializeApp(firebaseConfig);
+  const db = getFirestore(firebaseApp);
+
+  // 1. 唯一會跳回 login 的地方：一開始沒有 studentId
+  const studentId = localStorage.getItem('studentId');
+  if (!studentId) {
+    window.location.href = './login.html';
+    throw new Error('未登入');
+  }
+
+  // 2. 先從 localStorage 快取拿資料（Firebase 之後即時覆蓋）
+  const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  let userData = {
+    name: cachedUser?.name || '使用者',
+    room: cachedUser?.room || '—',
+    sid:  cachedUser?.studentId || studentId
+  };
+  let statsData  = { pkgCount: 0, visCount: 0, mntCount: 0 };
+  let activities = [];
+  let shellBuilt = false;
+
+  function initIcons() {
+    if (window.lucide) window.lucide.createIcons();
+  }
+
+  function bindLogout() {
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+      localStorage.removeItem('studentId');
+      localStorage.removeItem('currentUser');
+      window.location.href = './login.html';
+    });
+  }
+
+  // 3. 主內容 HTML
+  function renderContent() {
+    const stats = [
+      { title: '待領包裹', value: statsData.pkgCount, unit: '件', icon: 'package',  color: 'bg-blue-500'   },
+      { title: '訪客申請', value: statsData.visCount, unit: '筆', icon: 'users',    color: 'bg-green-500'  },
+      { title: '維修案件', value: statsData.mntCount, unit: '件', icon: 'wrench',   color: 'bg-orange-500' }
+    ];
+    return `
+      <div class="mb-8">
+        <h2 class="text-3xl font-semibold text-gray-900 mb-1">${userData.name}</h2>
+        <p class="text-gray-500">${userData.room}｜${userData.sid}</p>
       </div>
-      ` +
-      layoutEnd();
 
-    initLayout();
-  </script>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        ${stats.map(s => `
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+            <div class="mb-4">
+              <div class="${s.color} p-3 rounded-lg inline-block">
+                <i data-lucide="${s.icon}" class="w-6 h-6 text-white"></i>
+              </div>
+            </div>
+            <h3 class="text-gray-500 text-sm mb-1">${s.title}</h3>
+            <div class="flex items-baseline gap-2">
+              <span class="text-2xl font-semibold text-gray-900">${s.value}</span>
+              <span class="text-gray-400 text-sm">${s.unit}</span>
+            </div>
+          </div>`).join('')}
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h2 class="text-lg font-semibold text-gray-900 mb-6">近期活動</h2>
+          ${activities.length === 0
+            ? `<div class="flex flex-col items-center py-10 text-gray-400">
+                 <i data-lucide="bell-off" class="w-8 h-8 mb-3"></i>
+                 <p class="text-sm">尚無近期活動紀錄</p>
+               </div>`
+            : `<div class="space-y-3">
+                 ${activities.map(a => `
+                   <div class="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors">
+                     <div class="bg-blue-50 text-blue-600 p-2 rounded-lg flex-shrink-0">
+                       <i data-lucide="bell" class="w-4 h-4"></i>
+                     </div>
+                     <div>
+                       <p class="text-gray-900 font-medium text-sm">${a.title || ''}</p>
+                       <p class="text-gray-500 text-xs mt-0.5">${a.description || ''}</p>
+                     </div>
+                   </div>`).join('')}
+               </div>`}
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h2 class="text-lg font-semibold text-gray-900 mb-4">快捷入口</h2>
+          <div class="space-y-2">
+            ${[
+              ['./room-control.html', '🏠', '房間控制'],
+              ['./energy.html',       '⚡', '能源監控'],
+              ['./package.html',      '📦', '包裹管理'],
+              ['./maintenance.html',  '🔧', '維修報修'],
+              ['./visitor.html',      '👤', '訪客管理'],
+              ['./medical.html',      '🏥', '緊急通知']
+            ].map(([href, emoji, label]) => `
+              <a href="${href}"
+                class="flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200
+                       hover:border-blue-500 hover:bg-blue-50 text-gray-700 text-sm transition-colors">
+                <span>${emoji}</span><span>${label}</span>
+                <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-gray-400"></i>
+              </a>`).join('')}
+          </div>
+        </div>
+      </div>`;
+  }
+
+  // 4. 建立整頁 Shell（只建一次）
+  function renderShell() {
+    shellBuilt = true;
+    document.getElementById('page').innerHTML = `
+      <div class="flex min-h-screen">
+        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
+          <div class="p-6 border-b border-gray-100">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <i data-lucide="house" class="w-5 h-5 text-white"></i>
+              </div>
+              <div>
+                <p class="font-semibold text-gray-900 text-sm">智慧宿舍系統</p>
+                <p class="text-xs text-gray-400">Smart Dorm</p>
+              </div>
+            </div>
+          </div>
+
+          <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <a href="./dashboard.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-medium">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 首頁 Dashboard
+            </a>
+            <a href="./room-control.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="home" class="w-4 h-4"></i> 房間控制
+            </a>
+            <a href="./energy.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="zap" class="w-4 h-4"></i> 能源監控
+            </a>
+            <a href="./package.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="package" class="w-4 h-4"></i> 包裹管理
+            </a>
+            <a href="./maintenance.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="wrench" class="w-4 h-4"></i> 維修報修
+            </a>
+            <a href="./visitor.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="users" class="w-4 h-4"></i> 訪客管理
+            </a>
+            <a href="./medical.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="heart-pulse" class="w-4 h-4"></i> 緊急通知
+            </a>
+          </nav>
+
+          <div class="p-4 border-t border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p id="sidebar-name" class="text-sm font-medium text-gray-900 truncate">${userData.name}</p>
+                <p id="sidebar-room" class="text-xs text-gray-400 truncate">${userData.room}</p>
+              </div>
+            </div>
+            <button id="logoutBtn"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500
+                     hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
+              <i data-lucide="log-out" class="w-4 h-4"></i> 登出
+            </button>
+          </div>
+        </aside>
+
+        <div class="flex-1 flex flex-col ml-64 min-h-screen">
+          <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+            <h1 class="text-xl font-semibold text-gray-900">首頁 Dashboard</h1>
+            <p id="header-sub" class="text-sm text-gray-400">${userData.room}｜${userData.sid}</p>
+          </header>
+          <main id="main-content" class="p-6 max-w-7xl mx-auto w-full">
+            ${renderContent()}
+          </main>
+        </div>
+      </div>`;
+    initIcons();
+    bindLogout();
+  }
+
+  // 5. 只更新主內容（不重建 Sidebar，避免閃爍）
+  function updateContent() {
+    if (!shellBuilt) { renderShell(); return; }
+    const mainEl = document.getElementById('main-content');
+    if (mainEl) mainEl.innerHTML = renderContent();
+    const nameEl = document.getElementById('sidebar-name');
+    const roomEl = document.getElementById('sidebar-room');
+    const subEl  = document.getElementById('header-sub');
+    if (nameEl) nameEl.textContent = userData.name;
+    if (roomEl) roomEl.textContent = userData.room;
+    if (subEl)  subEl.textContent  = `${userData.room}｜${userData.sid}`;
+    initIcons();
+  }
+
+  // 6. 初始化：先畫 Shell
+  renderShell();
+
+  // 7. 自動備援：onSnapshot 失敗時改用一次性讀取，不會跳回登入
+  function tryOnSnapshot(ref, onData, colName) {
+    const unsub = onSnapshot(ref, onData, (err) => {
+      console.warn(`[${colName}] onSnapshot 失敗，改用一次性讀取:`, err.code);
+      unsub();
+      if (colName === 'users') {
+        getDoc(ref).then(onData).catch(e => console.error(`[${colName}] getDoc 失敗:`, e));
+      } else {
+        getDocs(ref).then(onData).catch(e => console.error(`[${colName}] getDocs 失敗:`, e));
+      }
+    });
+  }
+
+  // 8. 監聽 users/{studentId}
+  tryOnSnapshot(
+    doc(db, 'users', studentId),
+    (snap) => {
+      if (!snap.exists()) {
+        // 文件不存在也不跳回登入，繼續顯示快取資料
+        console.warn('[users] 文件不存在，使用快取資料');
+        return;
+      }
+      const d = snap.data();
+      userData = {
+        name: d.name      || cachedUser?.name || '使用者',
+        room: d.room      || cachedUser?.room || '—',
+        sid:  d.studentId || studentId
+      };
+      localStorage.setItem('currentUser', JSON.stringify({
+        id:        studentId,
+        studentId: d.studentId || studentId,
+        name:      d.name  || '',
+        room:      d.room  || '',
+        bed:       d.bed   || '',
+        class:     d.class || ''
+      }));
+      updateContent();
+    },
+    'users'
+  );
+
+  // 9. 監聽 packages
+  tryOnSnapshot(
+    collection(db, 'packages'),
+    (snap) => {
+      statsData.pkgCount = snap.docs.filter(d => d.data().status === 'waiting').length;
+      updateContent();
+    },
+    'packages'
+  );
+
+  // 10. 監聽 visitors
+  tryOnSnapshot(
+    collection(db, 'visitors'),
+    (snap) => {
+      statsData.visCount = snap.docs.filter(d =>
+        ['pending', 'approved'].includes(d.data().status)
+      ).length;
+      updateContent();
+    },
+    'visitors'
+  );
+
+  // 11. 監聽 maintenance
+  tryOnSnapshot(
+    collection(db, 'maintenance'),
+    (snap) => {
+      statsData.mntCount = snap.docs.filter(d =>
+        d.data().status === 'processing'
+      ).length;
+      updateContent();
+    },
+    'maintenance'
+  );
+
+  // 12. 監聽 activities
+  tryOnSnapshot(
+    collection(db, 'activities'),
+    (snap) => {
+      activities = snap.docs.map(d => d.data()).slice(0, 5);
+      updateContent();
+    },
+    'activities'
+  );
+</script>
 </body>
 </html>

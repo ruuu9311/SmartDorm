@@ -3,88 +3,317 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Visitor</title>
+  <title>訪客管理 - 智慧宿舍系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/styles.css">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="./assets/app.js"></script>
+  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-  <div id="page"></div>
+<div id="page">
+  <div class="flex items-center justify-center min-h-screen flex-col gap-4 text-gray-400">
+    <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <p>載入中...</p>
+  </div>
+</div>
 
-  <script>
-    document.getElementById('page').innerHTML =
-      layoutStart('visitor', '訪客管理') +
-      `
-      <div class="p-6 max-w-6xl mx-auto">
-        <div class="mb-8">
-          <h1 class="text-3xl font-semibold text-gray-900 mb-2">訪客管理</h1>
-          <p class="text-gray-600">訪客預約與進出審核</p>
-        </div>
+<script type="module">
+import {
+  auth, db, requireAuth,
+  layoutStart, layoutEnd, initIcons, initLogout,
+  collection, getDocs
+} from './assets/app.js';
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-xl font-semibold text-gray-900 mb-6">新增訪客申請</h2>
-            <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input class="w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="訪客姓名">
-              <select class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-                <option>家人</option>
-                <option>同學</option>
-                <option>朋友</option>
-              </select>
-              <input type="date" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-              <input type="time" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
-              <textarea class="md:col-span-2 w-full px-4 py-3 border border-gray-300 rounded-lg" rows="4" placeholder="備註說明"></textarea>
-              <button type="button" class="md:col-span-2 px-4 py-3 bg-blue-600 text-white rounded-lg">送出申請</button>
-            </form>
+import {
+  addDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+function getStatusBadge(status) {
+  const map = {
+    pending:  '<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">待審核</span>',
+    approved: '<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">已核准</span>',
+    rejected: '<span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">已拒絕</span>'
+  };
+  return map[status] || `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">${status || '未知'}</span>`;
+}
+
+requireAuth(async user => {
+  const studentId = localStorage.getItem('studentId');
+  const cached    = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  const name = cached?.name || user.name || '使用者';
+  const room = cached?.room || user.room || '—';
+  const sid  = cached?.studentId || studentId || '';
+
+  let visitors = [];
+  try {
+    const snap = await getDocs(collection(db, 'visitor'));
+    snap.forEach(d => {
+      const data = d.data();
+      if (data.uid === user.uid) visitors.push({ id: d.id, ...data });
+    });
+    visitors.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+  } catch (err) {
+    console.warn('[visitor] 讀取失敗:', err.code);
+  }
+
+  document.getElementById('page').innerHTML =
+    layoutStart('visitor', '訪客管理', name, room, sid) +
+    `<div class="p-6 max-w-6xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-3xl font-semibold text-gray-900 mb-2">訪客管理</h1>
+        <p class="text-gray-600">訪客預約與進出審核</p>
+      </div>
+
+      <!-- 訪客登記須知（全寬橫幅） -->
+      <div class="bg-blue-50 border border-blue-100 rounded-xl p-5 mb-6">
+        <h3 class="text-sm font-semibold text-blue-800 mb-3">訪客登記須知</h3>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-2 text-sm text-blue-700">
+          <div class="flex items-start gap-2">
+            <span class="text-blue-500 font-bold mt-0.5">✓</span>
+            <span>訪客需提前登記，經審核通過後方可進入</span>
           </div>
-
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">規範提醒</h2>
-            <div class="space-y-3 text-sm text-gray-700">
-              <p>訪客時間最晚至 22:00。</p>
-              <p>訪客資料可接 Firebase 即時審核流程。</p>
-            </div>
+          <div class="flex items-start gap-2">
+            <span class="text-blue-500 font-bold mt-0.5">✓</span>
+            <span>住宿生需親自至管理中心接待訪客</span>
           </div>
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div class="p-6 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">申請紀錄</h2>
+          <div class="flex items-start gap-2">
+            <span class="text-blue-500 font-bold mt-0.5">✓</span>
+            <span>訪客需攜帶有效身份證件於門口登記</span>
           </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="text-left py-3 px-4 text-gray-600">姓名</th>
-                  <th class="text-left py-3 px-4 text-gray-600">關係</th>
-                  <th class="text-left py-3 px-4 text-gray-600">日期</th>
-                  <th class="text-left py-3 px-4 text-gray-600">時間</th>
-                  <th class="text-left py-3 px-4 text-gray-600">狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${mock.visitors.map(v => `
-                  <tr class="border-b border-gray-100">
-                    <td class="py-3 px-4">${v.name}</td>
-                    <td class="py-3 px-4">${v.relation}</td>
-                    <td class="py-3 px-4">${v.date}</td>
-                    <td class="py-3 px-4">${v.time}</td>
-                    <td class="py-3 px-4">${getStatusBadge(v.status)}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
+          <div class="flex items-start gap-2">
+            <span class="text-blue-500 font-bold mt-0.5">✓</span>
+            <span>訪客離開時需至管理中心登記離舍</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-blue-500 font-bold mt-0.5">✓</span>
+            <span>訪客時間為每日 08:00 - 22:00</span>
+          </div>
+          <div class="flex items-start gap-2">
+            <span class="text-blue-500 font-bold mt-0.5">✓</span>
+            <span>請確保訪客遵守宿舍管理規定</span>
           </div>
         </div>
       </div>
-      ` +
-      layoutEnd();
 
-    initLayout();
-  </script>
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+
+        <!-- 申請表單 -->
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="px-6 py-4 border-b border-gray-100">
+            <h2 class="text-base font-semibold text-gray-900">訪客登記表單</h2>
+          </div>
+          <form id="vForm" class="p-6 grid grid-cols-1 md:grid-cols-2 gap-5">
+
+            <!-- 住宿生房號（唯讀） -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">住宿生房號</label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <i data-lucide="home" class="w-4 h-4"></i>
+                </span>
+                <input type="text" value="${room}" readonly
+                  class="w-full pl-9 pr-4 py-3 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600 cursor-not-allowed">
+              </div>
+            </div>
+
+            <!-- 訪客姓名 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                訪客姓名 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <i data-lucide="user" class="w-4 h-4"></i>
+                </span>
+                <input id="vName" type="text" required
+                  class="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="請輸入訪客姓名">
+              </div>
+            </div>
+
+            <!-- 訪客電話 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                訪客電話 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <i data-lucide="phone" class="w-4 h-4"></i>
+                </span>
+                <input id="vPhone" type="tel" required
+                  class="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="0912-345-678">
+              </div>
+            </div>
+
+            <!-- 預計來訪日期 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                預計來訪日期 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <i data-lucide="calendar" class="w-4 h-4"></i>
+                </span>
+                <input id="vDate" type="date" required
+                  class="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+            </div>
+
+            <!-- 預計來訪時間 -->
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                預計來訪時間 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <i data-lucide="clock" class="w-4 h-4"></i>
+                </span>
+                <input id="vTime" type="time" required
+                  class="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+              </div>
+            </div>
+
+            <!-- 入舍原因 -->
+            <div class="md:col-span-2">
+              <label class="block text-sm font-medium text-gray-700 mb-1">
+                入舍原因 <span class="text-red-500">*</span>
+              </label>
+              <div class="relative">
+                <span class="absolute inset-y-0 left-3 flex items-center text-gray-400">
+                  <i data-lucide="message-square" class="w-4 h-4"></i>
+                </span>
+                <select id="vReason" required
+                  class="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 appearance-none bg-white">
+                  <option value="" disabled selected>請選擇入舍原因</option>
+                  <option value="探訪朋友">探訪朋友</option>
+                  <option value="家長探視">家長探視</option>
+                  <option value="送物品">送物品</option>
+                  <option value="討論課業">討論課業</option>
+                  <option value="協助搬運">協助搬運</option>
+                  <option value="其他">其他</option>
+                </select>
+              </div>
+            </div>
+
+            <div id="vMsg" class="md:col-span-2 hidden p-3 rounded-lg text-sm"></div>
+
+            <div class="md:col-span-2 flex gap-3">
+              <button type="submit"
+                class="flex-1 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium text-sm">
+                提交申請
+              </button>
+              <button type="reset"
+                class="px-8 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm">
+                取消
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- 申請狀況統計 -->
+        <div class="space-y-4">
+          <div class="bg-white rounded-xl shadow-sm p-5 border border-gray-100">
+            <p class="text-sm font-semibold text-gray-700 mb-4">我的申請狀況</p>
+            <div class="space-y-3 text-sm">
+              <div class="flex items-center justify-between p-3 bg-yellow-50 rounded-lg">
+                <span class="text-yellow-700">待審核</span>
+                <span class="font-bold text-yellow-600 text-lg">${visitors.filter(v => v.status === 'pending').length}</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-green-50 rounded-lg">
+                <span class="text-green-700">已核准</span>
+                <span class="font-bold text-green-600 text-lg">${visitors.filter(v => v.status === 'approved').length}</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                <span class="text-red-700">已拒絕</span>
+                <span class="font-bold text-red-500 text-lg">${visitors.filter(v => v.status === 'rejected').length}</span>
+              </div>
+              <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg border-t border-gray-100">
+                <span class="text-gray-600">總計</span>
+                <span class="font-bold text-gray-700 text-lg">${visitors.length}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 申請紀錄表格 -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-900">我的申請紀錄 (${visitors.length})</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">訪客姓名</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">電話</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">日期</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">時間</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">入舍原因</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${visitors.length === 0
+                ? '<tr><td colspan="6" class="py-8 text-center text-gray-400">尚無訪客申請紀錄</td></tr>'
+                : visitors.map(v => `
+                  <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-3 px-4 font-medium">${v.visitorName || v.name || '—'}</td>
+                    <td class="py-3 px-4 text-gray-600">${v.phone || '—'}</td>
+                    <td class="py-3 px-4 text-gray-600">${v.date || '—'}</td>
+                    <td class="py-3 px-4 text-gray-600">${v.visitTime || v.time || '—'}</td>
+                    <td class="py-3 px-4 text-gray-600">${v.reason || v.relation || '—'}</td>
+                    <td class="py-3 px-4">${getStatusBadge(v.status)}</td>
+                  </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>` +
+    layoutEnd();
+
+  initIcons();
+  initLogout();
+
+  document.getElementById('vForm').addEventListener('submit', async e => {
+    e.preventDefault();
+    const msg = document.getElementById('vMsg');
+    const btn = e.target.querySelector('button[type="submit"]');
+    btn.textContent = '送出中...';
+    btn.disabled = true;
+
+    try {
+      await addDoc(collection(db, 'visitor'), {
+        uid:         user.uid,
+        studentId:   sid,
+        hostName:    name,
+        room:        room,
+        visitorName: document.getElementById('vName').value.trim(),
+        phone:       document.getElementById('vPhone').value.trim(),
+        date:        document.getElementById('vDate').value,
+        visitTime:   document.getElementById('vTime').value,
+        reason:      document.getElementById('vReason').value,
+        status:      'pending',
+        createdAt:   serverTimestamp()
+      });
+      msg.textContent = '✅ 申請已送出！等待管理員審核。';
+      msg.className = 'md:col-span-2 p-3 rounded-lg text-sm bg-green-50 text-green-700 border border-green-200';
+      msg.classList.remove('hidden');
+      e.target.reset();
+      setTimeout(() => location.reload(), 2000);
+    } catch (err) {
+      msg.textContent = '❌ 送出失敗：' + err.message;
+      msg.className = 'md:col-span-2 p-3 rounded-lg text-sm bg-red-50 text-red-700';
+      msg.classList.remove('hidden');
+      btn.textContent = '提交申請';
+      btn.disabled = false;
+    }
+  });
+});
+</script>
 </body>
 </html>

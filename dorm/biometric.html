@@ -3,93 +3,120 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Biometric</title>
+  <title>門禁生物辨識 - 智慧宿舍系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/styles.css">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="./assets/app.js"></script>
 </head>
 <body class="bg-gray-50 text-gray-900">
-  <div id="page"></div>
+<div id="page"><div class="flex items-center justify-center min-h-screen text-gray-400">載入中...</div></div>
 
-  <script>
-    document.getElementById('page').innerHTML =
-      layoutStart('biometric', '門禁生物辨識') +
-      `
-      <div class="p-6 max-w-6xl mx-auto">
-        <div class="mb-8">
-          <h1 class="text-3xl font-semibold text-gray-900 mb-2">門禁生物辨識</h1>
-          <p class="text-gray-600">宿舍出入安全驗證中心</p>
-        </div>
+<!-- ✅ 只有一個 script type="module"，所有程式碼都在裡面 -->
+<script type="module">
+import { auth, db, requireAuth, layoutStart, layoutEnd, initIcons, initLogout,
+         collection, getDocs, safeGetDocs, safeGetDoc } from './assets/app.js';
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <div class="rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 h-80 flex items-center justify-center">
-              <div class="text-center">
-                <div class="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
-                  <i data-lucide="scan-face" class="w-10 h-10 text-blue-600"></i>
-                </div>
-                <h2 class="text-xl font-semibold text-gray-900 mb-2">人臉辨識掃描區</h2>
-                <p class="text-gray-600 mb-4">可對接 Node-RED 與 Firebase 即時辨識結果</p>
-                <button class="px-4 py-2 bg-blue-600 text-white rounded-lg">開始掃描</button>
+requireAuth(async user => {
+  // Step 1: 從 Firestore 讀取使用者資料
+  let name = user.email, room = '—', sid = '';
+  try {
+    const userSnap = await getDocs(collection(db, 'users'));
+    userSnap.forEach(d => {
+      if (d.data().uid === user.uid) {
+        name = d.data().name || name;
+        room = d.data().room || '—';
+        sid  = d.data().studentId || '';
+      }
+    });
+  } catch(_) {}
+
+  // Step 2: 從 Firestore 讀取門禁紀錄
+  let logs = [];
+  try {
+    const logSnap = await getDocs(collection(db, 'biometric_logs'));
+    logSnap.forEach(d => logs.push({ id: d.id, ...d.data() }));
+  } catch(_) {}
+
+  // Step 3: 渲染頁面
+  document.getElementById('page').innerHTML =
+    layoutStart('biometric', '門禁生物辨識', name, room, sid) +
+    `<div class="p-6 max-w-6xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-3xl font-semibold text-gray-900 mb-2">門禁生物辨識</h1>
+        <p class="text-gray-600">宿舍出入安全驗證中心</p>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <div class="rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 h-80 flex items-center justify-center">
+            <div class="text-center">
+              <div class="w-20 h-20 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-4">
+                <i data-lucide="scan-face" class="w-10 h-10 text-blue-600"></i>
               </div>
+              <h2 class="text-xl font-semibold text-gray-900 mb-2">人臉辨識掃描區</h2>
+              <p class="text-gray-600 mb-4">可對接 Node-RED 與 Firebase 即時辨識結果</p>
+              <button class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">開始掃描</button>
             </div>
           </div>
-
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">辨識資訊</h2>
-            <div class="space-y-4 text-sm">
-              <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
-                <p class="text-green-800 font-medium">狀態</p>
-                <p class="text-green-700 mt-1">系統正常</p>
-              </div>
-              <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <p class="text-blue-800 font-medium">房號</p>
-                <p class="text-blue-700 mt-1">${appState.user.room}</p>
-              </div>
-              <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
-                <p class="text-gray-800 font-medium">使用者</p>
-                <p class="text-gray-700 mt-1">${appState.user.name}</p>
-              </div>
-            </div>
-          </div>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div class="p-6 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">門禁紀錄</h2>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="text-left py-3 px-4 text-gray-600">時間</th>
-                  <th class="text-left py-3 px-4 text-gray-600">方式</th>
-                  <th class="text-left py-3 px-4 text-gray-600">結果</th>
-                  <th class="text-left py-3 px-4 text-gray-600">說明</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${mock.biometricLogs.map(log => `
-                  <tr class="border-b border-gray-100">
-                    <td class="py-3 px-4 text-gray-900">${log.time}</td>
-                    <td class="py-3 px-4 text-gray-700">${log.type}</td>
-                    <td class="py-3 px-4">${getStatusBadge(log.status)}</td>
-                    <td class="py-3 px-4 text-gray-700">${log.note}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
+        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">辨識資訊</h2>
+          <div class="space-y-4 text-sm">
+            <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+              <p class="text-green-800 font-medium">狀態</p>
+              <p class="text-green-700 mt-1">系統正常</p>
+            </div>
+            <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <p class="text-blue-800 font-medium">房號</p>
+              <p class="text-blue-700 mt-1">${room}</p>
+            </div>
+            <div class="p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <p class="text-gray-800 font-medium">使用者</p>
+              <p class="text-gray-700 mt-1">${name}</p>
+            </div>
           </div>
         </div>
       </div>
-      ` +
-      layoutEnd();
 
-    initLayout();
-  </script>
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-900">門禁紀錄 (${logs.length})</h2>
+        </div>
+        <div class="overflow-x-auto">
+          <table class="w-full">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left py-3 px-4 text-gray-600">時間</th>
+                <th class="text-left py-3 px-4 text-gray-600">方式</th>
+                <th class="text-left py-3 px-4 text-gray-600">結果</th>
+                <th class="text-left py-3 px-4 text-gray-600">說明</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${logs.length === 0
+                ? '<tr><td colspan="4" class="py-8 text-center text-gray-400">尚無門禁紀錄（Node-RED 接入後自動顯示）</td></tr>'
+                : logs.map(log => `
+                  <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-3 px-4 text-gray-900">${log.time || '—'}</td>
+                    <td class="py-3 px-4 text-gray-700">${log.type || '—'}</td>
+                    <td class="py-3 px-4">${getStatusBadge(log.status)}</td>
+                    <td class="py-3 px-4 text-gray-700">${log.note || '—'}</td>
+                  </tr>`).join('')}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>` +
+    layoutEnd();
+
+  // Step 4: 初始化 icon 和登出按鈕
+  initIcons();
+  initLogout();
+});
+</script>
 </body>
 </html>

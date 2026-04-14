@@ -3,75 +3,136 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Package</title>
+  <title>包裹管理 - 智慧宿舍系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="./assets/styles.css">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <script src="./assets/app.js"></script>
+  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-  <div id="page"></div>
+<div id="page">
+  <div class="flex items-center justify-center min-h-screen flex-col gap-4 text-gray-400">
+    <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+    <p>載入中...</p>
+  </div>
+</div>
 
-  <script>
-    const waitingPackages = mock.packages.filter(p => p.status === 'waiting');
-    const pickedPackages = mock.packages.filter(p => p.status === 'picked');
+<script type="module">
+import {
+  auth, db, requireAuth,
+  layoutStart, layoutEnd, initIcons, initLogout,
+  collection, getDocs
+} from './assets/app.js';
 
-    document.getElementById('page').innerHTML =
-      layoutStart('package', '包裹管理') +
-      `
-      <div class="p-6 max-w-6xl mx-auto">
-        <div class="mb-8">
-          <h1 class="text-3xl font-semibold text-gray-900 mb-2">包裹管理</h1>
-          <p class="text-gray-600">宿舍包裹收件與領取紀錄</p>
+// ── getStatusBadge：放在 requireAuth 外，template 才能存取 ─────────────────
+function getStatusBadge(status) {
+  const map = {
+    waiting: '<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">待領取</span>',
+    picked:  '<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">已領取</span>',
+    expired: '<span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">已逾期</span>'
+  };
+  return map[status] || `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">${status || '未知'}</span>`;
+}
+
+requireAuth(async user => {
+  // Step 1: 從 localStorage 快取取使用者資料
+  const studentId = localStorage.getItem('studentId');
+  const cached    = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  const name = cached?.name || user.name || '使用者';
+  const room = cached?.room || user.room || '—';
+  const sid  = cached?.studentId || studentId || '';
+
+  // Step 2: 讀取包裹資料
+  let packages = [];
+  try {
+    const snap = await getDocs(collection(db, 'packages'));
+    snap.forEach(d => packages.push({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.warn('[packages] 讀取失敗:', err.code);
+  }
+
+  const waiting = packages.filter(p => p.status === 'waiting');
+  const picked  = packages.filter(p => p.status === 'picked');
+
+  // Step 3: 渲染頁面（layoutStart 補齊 name / room / sid 三個參數）
+  document.getElementById('page').innerHTML =
+    layoutStart('package', '包裹管理', name, room, sid) +
+    `<div class="p-6 max-w-6xl mx-auto">
+      <div class="mb-8">
+        <h1 class="text-3xl font-semibold text-gray-900 mb-2">包裹管理</h1>
+        <p class="text-gray-600">宿舍包裹收件與領取紀錄</p>
+      </div>
+
+      <!-- 待領取 -->
+      <div class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-900 mb-4">
+          待領取
+          <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">${waiting.length}</span>
+        </h2>
+        ${waiting.length === 0
+          ? `<div class="bg-white rounded-xl p-8 text-center border border-dashed border-gray-300 text-gray-400 text-sm">
+               目前沒有待領取的包裹
+             </div>`
+          : `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+               ${waiting.map(pkg => `
+                 <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
+                   <div class="flex items-center justify-between mb-3">
+                     <h3 class="text-gray-900 font-semibold">${pkg.trackingNumber || '—'}</h3>
+                     ${getStatusBadge(pkg.status)}
+                   </div>
+                   <div class="text-gray-600 text-sm space-y-1">
+                     ${pkg.courier         ? `<p>📦 物流：${pkg.courier}</p>` : ''}
+                     ${pkg.storageLocation ? `<p>📍 存放位置：${pkg.storageLocation}</p>` : ''}
+                     ${pkg.arrivalDate     ? `<p>🕐 到達：${pkg.arrivalDate} ${pkg.arrivalTime || ''}</p>` : ''}
+                   </div>
+                 </div>`).join('')}
+             </div>`}
+      </div>
+
+      <!-- 已領取紀錄 -->
+      <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="p-6 border-b border-gray-200">
+          <h2 class="text-xl font-semibold text-gray-900">
+            已領取紀錄
+            <span class="ml-2 text-gray-400 text-base font-normal">(${picked.length})</span>
+          </h2>
         </div>
-
-        <div class="grid grid-cols-1 gap-4 mb-8">
-          ${waitingPackages.map(pkg => `
-            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
-              <div class="flex items-center justify-between mb-2">
-                <h3 class="text-gray-900 font-semibold">${pkg.trackingNumber}</h3>
-                ${getStatusBadge(pkg.status)}
-              </div>
-              <p class="text-gray-600 text-sm">${pkg.courier}｜${pkg.storageLocation}｜${pkg.arrivalDate} ${pkg.arrivalTime}</p>
-            </div>
-          `).join('')}
-        </div>
-
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-          <div class="p-6 border-b border-gray-200">
-            <h2 class="text-xl font-semibold text-gray-900">已領取紀錄</h2>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full">
-              <thead class="bg-gray-50">
-                <tr>
-                  <th class="text-left py-3 px-4 text-gray-600">單號</th>
-                  <th class="text-left py-3 px-4 text-gray-600">物流</th>
-                  <th class="text-left py-3 px-4 text-gray-600">領取時間</th>
-                  <th class="text-left py-3 px-4 text-gray-600">狀態</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${pickedPackages.map(pkg => `
-                  <tr class="border-b border-gray-100">
-                    <td class="py-3 px-4">${pkg.trackingNumber}</td>
-                    <td class="py-3 px-4">${pkg.courier}</td>
-                    <td class="py-3 px-4">${pkg.pickupDate} ${pkg.pickupTime}</td>
+        <div class="overflow-x-auto">
+          <table class="w-full text-sm">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">單號</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">物流商</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">存放位置</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">領取時間</th>
+                <th class="text-left py-3 px-4 text-gray-600 font-medium">狀態</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${picked.length === 0
+                ? '<tr><td colspan="5" class="py-8 text-center text-gray-400">尚無已領取紀錄</td></tr>'
+                : picked.map(pkg => `
+                  <tr class="border-b border-gray-100 hover:bg-gray-50">
+                    <td class="py-3 px-4 font-medium">${pkg.trackingNumber || '—'}</td>
+                    <td class="py-3 px-4 text-gray-600">${pkg.courier || '—'}</td>
+                    <td class="py-3 px-4 text-gray-600">${pkg.storageLocation || '—'}</td>
+                    <td class="py-3 px-4 text-gray-600">${pkg.pickupDate || '—'} ${pkg.pickupTime || ''}</td>
                     <td class="py-3 px-4">${getStatusBadge(pkg.status)}</td>
-                  </tr>
-                `).join('')}
-              </tbody>
-            </table>
-          </div>
+                  </tr>`).join('')}
+            </tbody>
+          </table>
         </div>
       </div>
-      ` +
-      layoutEnd();
+    </div>` +
+    layoutEnd();
 
-    initLayout();
-  </script>
+  // Step 4: 初始化
+  initIcons();
+  initLogout();
+});
+</script>
 </body>
 </html>

@@ -25,26 +25,41 @@
       <div class="bg-white rounded-2xl shadow-xl p-8">
         <h2 class="text-2xl font-semibold text-gray-900 mb-6">登入</h2>
 
-        <form action="./dashboard.html" class="space-y-5">
+        <div id="errBox" class="hidden mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg text-sm"></div>
+
+        <form id="loginForm" class="space-y-5">
           <div>
             <label class="block text-gray-700 font-medium mb-2">學號</label>
-            <input type="text" class="w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="請輸入學號">
+            <input
+              id="studentIdInput"
+              type="text"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="請輸入學號，例如：411220413">
           </div>
 
           <div>
             <label class="block text-gray-700 font-medium mb-2">密碼</label>
-            <input type="password" class="w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="請輸入密碼">
+            <input
+              id="pwInput"
+              type="password"
+              required
+              class="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="請輸入密碼">
           </div>
 
-          <button type="submit" class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
+          <button
+            id="loginBtn"
+            type="submit"
+            class="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium">
             登入系統
           </button>
         </form>
 
         <div class="mt-6 pt-6 border-t border-gray-200">
-          <p class="text-gray-600 text-sm text-center mb-2">測試帳號</p>
+          <p class="text-gray-600 text-sm text-center mb-2">測試帳號（Firestore users 集合）</p>
           <div class="bg-gray-50 rounded-lg p-3 text-sm">
-            <p class="text-gray-700">學號：<span class="text-gray-900">A110001</span></p>
+            <p class="text-gray-700">學號：<span class="text-gray-900">411220413</span></p>
             <p class="text-gray-700">密碼：<span class="text-gray-900">demo123</span></p>
           </div>
         </div>
@@ -52,6 +67,103 @@
     </div>
   </div>
 
-  <script>lucide.createIcons()</script>
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
+      authDomain: "smartdorm-3ab79.firebaseapp.com",
+      projectId: "smartdorm-3ab79",
+      storageBucket: "smartdorm-3ab79.firebasestorage.app",
+      messagingSenderId: "240227925869",
+      appId: "1:240227925869:web:5a71f95a2f18bef1972464"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    const errMap = {
+      'user/not-found': '找不到此學號。',
+      'user/wrong-password': '密碼錯誤。',
+      'user/invalid-input': '請輸入學號與密碼。'
+    };
+
+    function saveLoginToLocal(studentId, data) {
+      localStorage.setItem('studentId', studentId);
+
+      const userObj = {
+        id: studentId,
+        studentId: data.studentId || studentId,
+        name: data.name || '',
+        room: data.room || '',
+        bed: data.bed || '',
+        class: data.class || ''
+      };
+
+      const oldUser = localStorage.getItem('currentUser');
+
+      if (!oldUser) {
+        localStorage.setItem('currentUser', JSON.stringify(userObj));
+        return;
+      }
+
+      try {
+        const parsed = JSON.parse(oldUser);
+
+        if (!parsed || parsed.id !== studentId) {
+          localStorage.setItem('currentUser', JSON.stringify(userObj));
+        }
+      } catch (e) {
+        localStorage.setItem('currentUser', JSON.stringify(userObj));
+      }
+    }
+
+    document.getElementById('loginForm').addEventListener('submit', async e => {
+      e.preventDefault();
+
+      const btn = document.getElementById('loginBtn');
+      const err = document.getElementById('errBox');
+
+      btn.textContent = '登入中...';
+      btn.disabled = true;
+      err.classList.add('hidden');
+
+      try {
+        const studentId = document.getElementById('studentIdInput').value.trim();
+        const password = document.getElementById('pwInput').value;
+
+        if (!studentId || !password) {
+          throw { code: 'user/invalid-input', message: '學號與密碼必填。' };
+        }
+
+        const userRef = doc(db, 'users', studentId);
+        const snap = await getDoc(userRef);
+
+        if (!snap.exists()) {
+          throw { code: 'user/not-found', message: '找不到此學號。' };
+        }
+
+        const data = snap.data();
+
+        if (data.password !== password) {
+          throw { code: 'user/wrong-password', message: '密碼錯誤。' };
+        }
+
+        saveLoginToLocal(studentId, data);
+        window.location.href = './dashboard.html';
+
+      } catch (ex) {
+        err.textContent = errMap[ex.code] || ('登入失敗：' + (ex.message || '未知錯誤'));
+        err.classList.remove('hidden');
+        btn.textContent = '登入系統';
+        btn.disabled = false;
+      }
+    });
+
+    if (window.lucide) {
+      window.lucide.createIcons();
+    }
+  </script>
 </body>
 </html>
