@@ -1,0 +1,12 @@
+html, body { font-family: 'Noto Sans TC', sans-serif; }
+.nav-item.active { background: rgb(239 246 255); color: rgb(37 99 235); }
+.sidebar-transition { transition: transform 0.3s ease; }
+.switch-dot { transition: transform 0.2s ease; }
+.switch-on .switch-dot { transform: translateX(24px); }
+.switch-on-blue { background: rgb(37 99 235); }
+.switch-on-green { background: rgb(22 163 74); }
+.switch-on-red { background: rgb(220 38 38); }
+.switch-on-cyan { background: rgb(8 145 178); }
+.switch-on-sky { background: rgb(2 132 199); }
+.card-hover { transition: all .2s ease; }
+.card-hover:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(15,23,42,.08); }

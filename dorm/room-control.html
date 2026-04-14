@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Room Control</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="./assets/app.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div id="page"></div>
+
+  <script>
+    document.getElementById('page').innerHTML =
+      layoutStart('room-control', '房間控制') +
+      `
+      <div class="p-6 max-w-6xl mx-auto">
+        <div class="mb-8">
+          <h1 class="text-3xl font-semibold text-gray-900 mb-2">房間控制</h1>
+          <p class="text-gray-600">${appState.user.room} 設備控制面板</p>
+        </div>
+
+        <div class="mb-8">
+          <h2 class="text-xl font-semibold text-gray-900 mb-4">情境模式</h2>
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            ${roomScenes.map(scene => `
+              <div class="bg-white border border-gray-200 rounded-xl p-6 card-hover">
+                <div class="flex items-center gap-3 mb-3">
+                  <div class="p-3 bg-blue-50 rounded-lg">
+                    <i data-lucide="${scene.icon}" class="w-6 h-6 text-blue-600"></i>
+                  </div>
+                  <h3 class="text-gray-900 font-medium">${scene.name}</h3>
+                </div>
+                <p class="text-gray-600 text-sm">${scene.description}</p>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 class="text-gray-900 font-medium mb-4">燈光亮度</h3>
+            <input type="range" min="0" max="100" value="70" class="w-full">
+            <p class="text-gray-600 text-sm mt-3">目前亮度：70%</p>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 class="text-gray-900 font-medium mb-4">門鎖狀態</h3>
+            <p class="text-green-600 font-medium">已上鎖</p>
+            <p class="text-gray-600 text-sm mt-2">可串接門禁設備狀態</p>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 class="text-gray-900 font-medium mb-4">冷氣溫度</h3>
+            <p class="text-cyan-600 text-lg font-semibold">24°C</p>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h3 class="text-gray-900 font-medium mb-4">風扇速度</h3>
+            <p class="text-blue-600 text-lg font-semibold">中速</p>
+          </div>
+        </div>
+      </div>
+      ` +
+      layoutEnd();
+
+    initLayout();
+  </script>
+</body>
+</html>

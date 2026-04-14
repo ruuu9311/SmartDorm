@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Visitor</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="./assets/app.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div id="page"></div>
+
+  <script>
+    document.getElementById('page').innerHTML =
+      layoutStart('visitor', '訪客管理') +
+      `
+      <div class="p-6 max-w-6xl mx-auto">
+        <div class="mb-8">
+          <h1 class="text-3xl font-semibold text-gray-900 mb-2">訪客管理</h1>
+          <p class="text-gray-600">訪客預約與進出審核</p>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">新增訪客申請</h2>
+            <form class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <input class="w-full px-4 py-3 border border-gray-300 rounded-lg" placeholder="訪客姓名">
+              <select class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+                <option>家人</option>
+                <option>同學</option>
+                <option>朋友</option>
+              </select>
+              <input type="date" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+              <input type="time" class="w-full px-4 py-3 border border-gray-300 rounded-lg">
+              <textarea class="md:col-span-2 w-full px-4 py-3 border border-gray-300 rounded-lg" rows="4" placeholder="備註說明"></textarea>
+              <button type="button" class="md:col-span-2 px-4 py-3 bg-blue-600 text-white rounded-lg">送出申請</button>
+            </form>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h2 class="text-xl font-semibold text-gray-900 mb-4">規範提醒</h2>
+            <div class="space-y-3 text-sm text-gray-700">
+              <p>訪客時間最晚至 22:00。</p>
+              <p>訪客資料可接 Firebase 即時審核流程。</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+          <div class="p-6 border-b border-gray-200">
+            <h2 class="text-xl font-semibold text-gray-900">申請紀錄</h2>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="text-left py-3 px-4 text-gray-600">姓名</th>
+                  <th class="text-left py-3 px-4 text-gray-600">關係</th>
+                  <th class="text-left py-3 px-4 text-gray-600">日期</th>
+                  <th class="text-left py-3 px-4 text-gray-600">時間</th>
+                  <th class="text-left py-3 px-4 text-gray-600">狀態</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${mock.visitors.map(v => `
+                  <tr class="border-b border-gray-100">
+                    <td class="py-3 px-4">${v.name}</td>
+                    <td class="py-3 px-4">${v.relation}</td>
+                    <td class="py-3 px-4">${v.date}</td>
+                    <td class="py-3 px-4">${v.time}</td>
+                    <td class="py-3 px-4">${getStatusBadge(v.status)}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+      ` +
+      layoutEnd();
+
+    initLayout();
+  </script>
+</body>
+</html>

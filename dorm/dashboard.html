@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="./assets/app.js"></script>
+</head>
+<body class="bg-gray-50 text-gray-900">
+  <div id="page"></div>
+
+  <script>
+    document.getElementById('page').innerHTML =
+      layoutStart('dashboard', '首頁 Dashboard') +
+      `
+      <div class="p-6 max-w-7xl mx-auto">
+        <div class="mb-8">
+          <h1 class="text-3xl font-semibold text-gray-900 mb-2">${appState.user.name}</h1>
+          <p class="text-gray-600">${appState.user.room}｜${appState.user.studentId}</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          ${mock.stats.map(stat => `
+            <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 card-hover">
+              <div class="flex items-start justify-between mb-4">
+                <div class="${stat.color} p-3 rounded-lg">
+                  <i data-lucide="${stat.icon}" class="w-6 h-6 text-white"></i>
+                </div>
+              </div>
+              <h3 class="text-gray-600 text-sm mb-1">${stat.title}</h3>
+              <div class="flex items-baseline gap-2">
+                <span class="text-2xl font-semibold text-gray-900">${stat.value}</span>
+                <span class="text-gray-500 text-sm">${stat.unit}</span>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">近期活動</h2>
+            <div class="space-y-4">
+              ${mock.recentActivities.map(a => `
+                <div class="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50">
+                  <div class="${a.color} p-2 rounded-lg">
+                    <i data-lucide="${a.icon}" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <p class="text-gray-900 font-medium">${a.title}</p>
+                    <p class="text-gray-600 text-sm mt-1">${a.description}</p>
+                    <p class="text-gray-500 text-sm mt-2">${a.time}</p>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
+            <h2 class="text-xl font-semibold text-gray-900 mb-6">快捷入口</h2>
+            <div class="space-y-3">
+              <a href="./room-control.html" class="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50">房間控制</a>
+              <a href="./energy.html" class="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50">能源監控</a>
+              <a href="./package.html" class="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50">包裹管理</a>
+              <a href="./maintenance.html" class="block px-4 py-3 rounded-lg border border-gray-200 hover:border-blue-500 hover:bg-blue-50">維修報修</a>
+            </div>
+          </div>
+        </div>
+      </div>
+      ` +
+      layoutEnd();
+
+    initLayout();
+  </script>
+</body>
+</html>
