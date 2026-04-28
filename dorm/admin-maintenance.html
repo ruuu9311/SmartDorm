@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>維修管理 - 智慧宿舍系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+<div class="max-w-6xl mx-auto p-6">
+  <div class="flex justify-between items-center mb-8">
+    <div>
+      <h1 class="text-2xl font-bold flex items-center gap-2">
+        <i data-lucide="wrench" class="text-orange-600"></i> 維修報修管理
+      </h1>
+      <p class="text-slate-500 text-sm mt-1">即時接收學生報修，點擊「完成」更新狀態</p>
+    </div>
+    <a href="./admin-dashboard.html"
+       class="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
+      <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回
+    </a>
+  </div>
+
+  <!-- 統計卡 -->
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">房間報修</p>
+        <p id="roomCount" class="text-3xl font-bold text-orange-600">0</p>
+      </div>
+      <i data-lucide="home" class="text-slate-100 w-12 h-12"></i>
+    </div>
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">公共區域</p>
+        <p id="publicCount" class="text-3xl font-bold text-blue-600">0</p>
+      </div>
+      <i data-lucide="building-2" class="text-slate-100 w-12 h-12"></i>
+    </div>
+    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
+      <div>
+        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">已完成</p>
+        <p id="doneCount" class="text-3xl font-bold text-emerald-600">0</p>
+      </div>
+      <i data-lucide="check-circle-2" class="text-slate-100 w-12 h-12"></i>
+    </div>
+  </div>
+
+  <!-- 分頁切換 -->
+  <div class="flex gap-2 mb-4">
+    <button id="tabPending" onclick="showTab('pending')"
+      class="px-4 py-2 rounded-xl text-sm font-bold bg-orange-500 text-white transition-all">
+      待處理
+    </button>
+    <button id="tabDone" onclick="showTab('done')"
+      class="px-4 py-2 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 transition-all">
+      已完成
+    </button>
+  </div>
+
+  <!-- 列表 -->
+  <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+    <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
+      <span id="listTitle" class="font-bold text-slate-700">待處理報修</span>
+      <span id="listCount" class="text-xs text-slate-400"></span>
+    </div>
+    <div id="maintenanceList" class="divide-y divide-slate-100">
+      <div class="p-20 text-center text-slate-300 italic">載入中...</div>
+    </div>
+  </div>
+</div>
+
+<audio id="alarmAudio" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto"></audio>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import {
+    getFirestore, collection, doc,
+    onSnapshot, updateDoc,
+    query, where, orderBy
+  } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
+    authDomain: "smartdorm-3ab79.firebaseapp.com",
+    projectId: "smartdorm-3ab79",
+    storageBucket: "smartdorm-3ab79.firebasestorage.app",
+    messagingSenderId: "240227925869",
+    appId: "1:240227925869:web:5a71f95a2f18bef1972464"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  // 1. 管理員權限檢查
+  if (localStorage.getItem('userRole') !== 'admin') {
+    window.location.href = './login.html';
+  }
+
+  // 2. 緊急醫療警報監聽（跨頁通用）
+  const alarm = document.getElementById('alarmAudio');
+  onSnapshot(
+    query(collection(db, 'medical'), where('status', '==', 'processing')),
+    snap => {
+      if (!snap.empty) {
+        alarm.play().catch(() => {});
+        const data = snap.docs[0].data();
+        setTimeout(() => {
+          if (confirm(`🚨 緊急求助！${data.room} ${data.name}`))
+            window.location.href = './admin-medical.html';
+        }, 500);
+      } else {
+        alarm.pause();
+        alarm.currentTime = 0;
+      }
+    }
+  );
+
+  // 3. 讀取全部維修單（不加 where status 篩選，統一由前端分流）
+  let allDocs = [];
+  let currentTab = 'pending';
+
+  function renderList() {
+    const list  = document.getElementById('maintenanceList');
+    const title = document.getElementById('listTitle');
+    const count = document.getElementById('listCount');
+
+    // 判斷「已完成」：status === 'completed' 或 status === '已完成'
+    // 判斷「待處理」：其他所有狀態（包含沒有 status 欄位的）
+    const filtered = allDocs.filter(({ data }) => {
+      const s = data.status || '';
+      const isDone = (s === 'completed' || s === '已完成');
+      return currentTab === 'done' ? isDone : !isDone;
+    });
+
+    // 更新統計
+    const roomTotal   = allDocs.filter(({ data }) => {
+      const s = data.status || '';
+      return data.side === '房間' && s !== 'completed' && s !== '已完成';
+    }).length;
+    const publicTotal = allDocs.filter(({ data }) => {
+      const s = data.status || '';
+      return data.side !== '房間' && s !== 'completed' && s !== '已完成';
+    }).length;
+    const doneTotal   = allDocs.filter(({ data }) => {
+      const s = data.status || '';
+      return s === 'completed' || s === '已完成';
+    }).length;
+
+    document.getElementById('roomCount').innerText   = roomTotal;
+    document.getElementById('publicCount').innerText = publicTotal;
+    document.getElementById('doneCount').innerText   = doneTotal;
+
+    title.innerText = currentTab === 'pending' ? '待處理報修' : '已完成報修';
+    count.innerText = `共 ${filtered.length} 筆`;
+
+    if (filtered.length === 0) {
+      list.innerHTML = `<div class="p-20 text-center text-slate-400 italic font-medium">
+        ${currentTab === 'pending' ? '目前沒有待處理的報修 👍' : '尚無已完成紀錄'}
+      </div>`;
+      lucide.createIcons();
+      return;
+    }
+
+    list.innerHTML = filtered.map(({ id, data: m }) => {
+      const isRoom = m.side === '房間';
+      const timeStr = m.timestamp?.toDate
+        ? m.timestamp.toDate().toLocaleString('zh-TW')
+        : (m.timestamp || '—');
+      const isDone = (m.status === 'completed' || m.status === '已完成');
+
+      return `
+        <div class="p-6 hover:bg-slate-50 transition-all flex flex-col md:flex-row justify-between gap-6">
+          <div class="flex-1">
+            <div class="flex items-center gap-2 mb-2">
+              <span class="text-[10px] font-bold px-2 py-0.5 rounded-full
+                ${isRoom ? 'bg-orange-100 text-orange-600' : 'bg-blue-100 text-blue-600'}">
+                ${m.side || '—'}
+              </span>
+              <span class="text-xs text-slate-400 italic">${timeStr}</span>
+              ${isDone ? '<span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-600">已完成</span>' : ''}
+            </div>
+            <h3 class="text-lg font-bold text-slate-800">
+              ${isRoom ? (m.room || '') : (m.place || '')} &nbsp;
+              <span class="text-base font-semibold text-slate-600">${m.thing || '（未填品項）'}</span>
+            </h3>
+            <p class="text-sm text-slate-500 mt-1 leading-relaxed">${m.description || '（無描述）'}</p>
+            <div class="flex items-center gap-4 mt-4 text-xs text-slate-400 bg-white p-2 rounded-lg border border-slate-100 w-fit">
+              <span class="flex items-center gap-1">
+                <i data-lucide="user" class="w-3 h-3"></i> ${m.name || '—'}
+              </span>
+              <span class="flex items-center gap-1">
+                <i data-lucide="hash" class="w-3 h-3"></i> ${m.ID || m.studentId || '—'}
+              </span>
+            </div>
+          </div>
+          ${!isDone ? `
+            <div class="flex items-center">
+              <button onclick="completeMaintenance('${id}')"
+                class="w-full md:w-auto bg-emerald-500 text-white px-6 py-3 rounded-2xl font-bold
+                       hover:bg-emerald-600 transition-all shadow-lg shadow-emerald-100
+                       flex items-center justify-center gap-2">
+                <i data-lucide="check-circle" class="w-5 h-5"></i> 標記完成
+              </button>
+            </div>` : ''}
+        </div>`;
+    }).join('');
+
+    lucide.createIcons();
+  }
+
+  // 監聽 maintenance 集合（無篩選條件，取全部）
+  onSnapshot(
+    query(collection(db, 'maintenance'), orderBy('timestamp', 'desc')),
+    snap => {
+      allDocs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+      renderList();
+    },
+    // 若 timestamp 欄位索引尚未建立，fallback 不排序
+    err => {
+      console.warn('orderBy 索引未建立，改用無排序查詢', err.message);
+      onSnapshot(collection(db, 'maintenance'), snap => {
+        allDocs = snap.docs.map(d => ({ id: d.id, data: d.data() }));
+        // 前端手動排序（timestamp 可能是 Firestore Timestamp 或字串）
+        allDocs.sort((a, b) => {
+          const ta = a.data.timestamp?.toDate?.() || new Date(a.data.timestamp || 0);
+          const tb = b.data.timestamp?.toDate?.() || new Date(b.data.timestamp || 0);
+          return tb - ta;
+        });
+        renderList();
+      });
+    }
+  );
+
+  // 4. 切換分頁
+  window.showTab = function(tab) {
+    currentTab = tab;
+    document.getElementById('tabPending').className =
+      tab === 'pending'
+        ? 'px-4 py-2 rounded-xl text-sm font-bold bg-orange-500 text-white transition-all'
+        : 'px-4 py-2 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 transition-all';
+    document.getElementById('tabDone').className =
+      tab === 'done'
+        ? 'px-4 py-2 rounded-xl text-sm font-bold bg-emerald-500 text-white transition-all'
+        : 'px-4 py-2 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 transition-all';
+    renderList();
+  };
+
+  // 5. 完成報修
+  window.completeMaintenance = async function(id) {
+    if (!confirm('確認標記此報修為「已完成」？')) return;
+    try {
+      await updateDoc(doc(db, 'maintenance', id), {
+        status: 'completed',
+        completedAt: new Date().toLocaleString('zh-TW')
+      });
+    } catch (err) {
+      alert('更新失敗：' + err.message);
+    }
+  };
+
+  lucide.createIcons();
+</script>
+</body>
+</html>

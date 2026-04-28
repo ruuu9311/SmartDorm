@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>訪客審核系統 - 管理端</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+  <div class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+          <i data-lucide="user-check" class="text-purple-600"></i> 訪客申請審核
+        </h1>
+        <p class="text-slate-500 text-sm mt-1">即時處理學生提出的訪客進入申請</p>
+      </div>
+      <a href="./admin-dashboard.html" class="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回儀表板
+      </a>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
+            <span class="font-bold text-slate-700">待處理申請</span>
+            <span id="pendingCount" class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-bold">0 件</span>
+          </div>
+          <div id="pendingList" class="divide-y divide-slate-100">
+            <div class="p-20 text-center text-slate-400">正在同步申請資料...</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-5 bg-slate-50 border-b font-bold text-slate-700">最近審核紀錄</div>
+          <div id="historyList" class="divide-y divide-slate-50 text-sm">
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="alarmAudio" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto"></audio>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, doc, onSnapshot, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = { 
+      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I", 
+      authDomain: "smartdorm-3ab79.firebaseapp.com", 
+      projectId: "smartdorm-3ab79", 
+      storageBucket: "smartdorm-3ab79.firebasestorage.app", 
+      messagingSenderId: "240227925869", 
+      appId: "1:240227925869:web:5a71f95a2f18bef1972464" 
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 1. 權限檢查
+    if (localStorage.getItem('userRole') !== 'admin') window.location.href = './login.html';
+
+    // 2. 全域緊急醫療監聽
+    const alarm = document.getElementById('alarmAudio');
+    onSnapshot(query(collection(db, 'medical'), where('status', '==', 'processing')), snap => {
+      if (!snap.empty) {
+        alarm.play().catch(() => {});
+        const data = snap.docs[0].data();
+        if(confirm(`🚨 【緊急求助】\n\n房號：${data.room}\n姓名：${data.name}\n\n是否立即前往處理？`)) window.location.href = './admin-medical.html';
+      }
+    });
+
+    // 3. 監聽待審核名單 (status == pending)
+    onSnapshot(query(collection(db, 'visitor'), where('status', '==', 'pending'), orderBy('timestamp', 'desc')), snap => {
+      const list = document.getElementById('pendingList');
+      document.getElementById('pendingCount').innerText = `${snap.size} 件`;
+
+      list.innerHTML = snap.docs.map(d => {
+        const v = d.data();
+        return `
+          <div class="p-6 hover:bg-slate-50 transition-all">
+            <div class="flex justify-between items-start mb-4">
+              <div>
+                <span class="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded">預計抵達：${v.date} ${v.visitTime}</span>
+                <h3 class="text-xl font-bold text-slate-800 mt-2">${v.visitorName}</h3>
+                <p class="text-sm text-slate-500">拜訪對象：${v.hostName} (房號：${v.room})</p>
+              </div>
+              <div class="flex gap-2">
+                <button onclick="auditVisitor('${d.id}', 'approved')" class="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">核准</button>
+                <button onclick="auditVisitor('${d.id}', 'rejected')" class="bg-slate-100 text-slate-500 px-5 py-2 rounded-xl font-bold hover:bg-red-50 hover:text-red-600 transition-all">拒絕</button>
+              </div>
+            </div>
+            <div class="bg-slate-50 p-3 rounded-xl border border-slate-100">
+              <p class="text-xs text-slate-400 mb-1">拜訪事由</p>
+              <p class="text-sm text-slate-600 italic">${v.reason || '未提供事由'}</p>
+            </div>
+          </div>
+        `;
+      }).join('') || '<div class="p-20 text-center text-slate-400 italic">目前沒有待審核的訪客申請</div>';
+    });
+
+    // 4. 監聽最近紀錄 (最近審核過的 10 筆)
+    onSnapshot(query(collection(db, 'visitor'), where('status', 'in', ['approved', 'rejected']), orderBy('timestamp', 'desc')), snap => {
+      const list = document.getElementById('historyList');
+      list.innerHTML = snap.docs.slice(0, 10).map(d => {
+        const v = d.data();
+        const isApprove = v.status === 'approved';
+        return `
+          <div class="p-4 bg-white flex justify-between items-center">
+            <div>
+              <p class="font-medium text-slate-700">${v.visitorName}</p>
+              <p class="text-[10px] text-slate-400">對象：${v.hostName}</p>
+            </div>
+            <span class="text-xs font-bold ${isApprove ? 'text-emerald-500' : 'text-red-400'}">
+              ${isApprove ? '已核准' : '已拒絕'}
+            </span>
+          </div>
+        `;
+      }).join('') || '<div class="p-10 text-center text-slate-300">無歷史紀錄</div>';
+    });
+
+    // 5. 審核功能
+    window.auditVisitor = async (id, result) => {
+      const actionText = result === 'approved' ? '核准進入' : '拒絕此申請';
+      if(confirm(`確定要 ${actionText} 嗎？`)) {
+        await updateDoc(doc(db, 'visitor', id), {
+          status: result,
+          auditTime: new Date().toLocaleString('zh-TW')
+        });
+      }
+    };
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

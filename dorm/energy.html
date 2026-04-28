@@ -8,68 +8,81 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="./assets/styles.css">
   <script src="https://unpkg.com/lucide@latest"></script>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
 </head>
 <body class="bg-gray-50 text-gray-900">
-<div id="page"><div class="flex items-center justify-center min-h-screen text-gray-400">載入中...</div></div>
+
+<div id="page">
+  <div class="flex items-center justify-center min-h-screen text-gray-400">載入中...</div>
+</div>
 
 <script type="module">
-import { auth, db, requireAuth, layoutStart, layoutEnd, initIcons, initLogout,
-         collection, getDocs } from './assets/app.js';
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import {
+    getFirestore, collection, getDocs
+  } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function levelFromUsage(v) {
-  if (v > 25) return 'over';
-  if (v >= 20) return 'warn';
-  return 'normal';
-}
+  const firebaseConfig = {
+    apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
+    authDomain: "smartdorm-3ab79.firebaseapp.com",
+    projectId: "smartdorm-3ab79",
+    storageBucket: "smartdorm-3ab79.firebasestorage.app",
+    messagingSenderId: "240227925869",
+    appId: "1:240227925869:web:5a71f95a2f18bef1972464"
+  };
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-function getStatusBadge(v) {
-  const lv = levelFromUsage(v);
-  if (lv === 'over')
-    return '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-medium"><i data-lucide="zap" class="w-3 h-3"></i>超標</span>';
-  if (lv === 'warn')
-    return '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-600 rounded-full text-xs font-medium"><i data-lucide="triangle-alert" class="w-3 h-3"></i>警戒</span>';
-  return '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-600 rounded-full text-xs font-medium"><i data-lucide="check-circle" class="w-3 h-3"></i>正常</span>';
-}
-
-function getEvalText(v) {
-  if (v > 25)  return '<span class="text-red-500 text-sm font-medium">需要改善</span>';
-  if (v >= 20) return '<span class="text-orange-500 text-sm font-medium">建議節能</span>';
-  return '<span class="text-green-600 text-sm font-medium">節能良好</span>';
-}
-
-function toDateStr(r) {
-  return (r.date || r.timestamp || '').toString().slice(0, 10);
-}
-
-// 從紀錄取小時字串 "HH:00"
-function toHourStr(r) {
-  const ts = (r.timestamp || r.time || r.date || '').toString();
-  // 若 timestamp 含時間部分 "YYYY-MM-DD HH:MM" 或 "YYYY-MM-DDTHH:MM"
-  const match = ts.match(/T?(\d{2}):\d{2}/);
-  return match ? match[1] + ':00' : null;
-}
-
-requireAuth(async user => {
+  // ── 1. 登入狀態檢查 ──────────────────────────────────────────────────────
+  const studentId = localStorage.getItem('studentId');
+  if (!studentId) {
+    window.location.href = './login.html';
+    throw new Error('未登入');
+  }
   const cached = JSON.parse(localStorage.getItem('currentUser') || 'null');
-  const name = cached?.name || '';
-  const room = cached?.room || '';
-  const sid  = cached?.studentId || localStorage.getItem('studentId') || '';
+  const name = cached?.name || '使用者';
+  const room = cached?.room || '—';
+  const sid  = studentId;
 
-  // ── Fetch ──────────────────────────────────────────────────────────────────
+  // ── 2. Helpers ───────────────────────────────────────────────────────────
+  function levelFromUsage(v) {
+    if (v > 25) return 'over';
+    if (v >= 20) return 'warn';
+    return 'normal';
+  }
+  function getStatusBadge(v) {
+    const lv = levelFromUsage(v);
+    if (lv === 'over')
+      return '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-red-100 text-red-600 rounded-full text-xs font-medium"><i data-lucide="zap" class="w-3 h-3"></i>超標</span>';
+    if (lv === 'warn')
+      return '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-100 text-yellow-600 rounded-full text-xs font-medium"><i data-lucide="triangle-alert" class="w-3 h-3"></i>警戒</span>';
+    return '<span class="inline-flex items-center gap-1 px-2 py-0.5 bg-green-100 text-green-600 rounded-full text-xs font-medium"><i data-lucide="check-circle" class="w-3 h-3"></i>正常</span>';
+  }
+  function getEvalText(v) {
+    if (v > 25)  return '<span class="text-red-500 text-sm font-medium">需要改善</span>';
+    if (v >= 20) return '<span class="text-orange-500 text-sm font-medium">建議節能</span>';
+    return '<span class="text-green-600 text-sm font-medium">節能良好</span>';
+  }
+  function toDateStr(r) {
+    return (r.date || r.timestamp || '').toString().slice(0, 10);
+  }
+  function toHourStr(r) {
+    const ts = (r.timestamp || r.time || r.date || '').toString();
+    const match = ts.match(/T?(\d{2}):\d{2}/);
+    return match ? match[1] + ':00' : null;
+  }
+
+  // ── 3. 讀取能源資料 ──────────────────────────────────────────────────────
   let recs = [];
   try {
     const snap = await getDocs(collection(db, 'energy_records'));
     snap.forEach(d => recs.push({ id: d.id, ...d.data() }));
   } catch(_) {}
-
   recs.sort((a, b) => toDateStr(b).localeCompare(toDateStr(a)));
 
-  // ── Date helpers ───────────────────────────────────────────────────────────
+  // ── 4. 計算統計值 ────────────────────────────────────────────────────────
   const now = new Date();
   const todayStr = now.toISOString().slice(0, 10);
   const monthStr = todayStr.slice(0, 7);
@@ -79,13 +92,10 @@ requireAuth(async user => {
   monday.setHours(0, 0, 0, 0);
   const mondayStr = monday.toISOString().slice(0, 10);
 
-  // ── Stats ──────────────────────────────────────────────────────────────────
   const todayRec  = recs.find(r => toDateStr(r) === todayStr);
   const todayVal  = parseFloat(todayRec?.usage) || 0;
-
   const weekRecs  = recs.filter(r => toDateStr(r) >= mondayStr && toDateStr(r) <= todayStr);
   const weekVal   = weekRecs.reduce((s, r) => s + (parseFloat(r.usage) || 0), 0);
-
   const monthRecs = recs.filter(r => toDateStr(r).startsWith(monthStr));
   const monthVal  = monthRecs.reduce((s, r) => s + (parseFloat(r.usage) || 0), 0);
 
@@ -103,243 +113,310 @@ requireAuth(async user => {
   const monthRemain = Math.max(MONTH_LIMIT - monthVal, 0).toFixed(1);
   const remainPct   = (100 - monthPct).toFixed(0);
 
-  // ── Chart datasets ─────────────────────────────────────────────────────────
-
-  // [週] 週一～週日 bar chart
-  const weekLabels = ['週一','週二','週三','週四','週五','週六','週日'];
+  // ── 5. 圖表資料準備 ──────────────────────────────────────────────────────
+  const weekLabels    = ['週一','週二','週三','週四','週五','週六','週日'];
   const weekChartData = Array(7).fill(0);
   weekRecs.forEach(r => {
-    const d = new Date(toDateStr(r));
+    const d    = new Date(toDateStr(r));
     const diff = Math.round((d - monday) / 86400000);
     if (diff >= 0 && diff < 7) weekChartData[diff] = parseFloat(r.usage) || 0;
   });
 
-  // [月] 第1週～第4週 bar chart（按當月日期分組）
   const monthWeekLabels = ['第1週','第2週','第3週','第4週'];
   const monthWeekData   = [0, 0, 0, 0];
   monthRecs.forEach(r => {
-    const day = new Date(toDateStr(r)).getDate(); // 1-based
+    const day = new Date(toDateStr(r)).getDate();
     const wi  = day <= 7 ? 0 : day <= 14 ? 1 : day <= 21 ? 2 : 3;
     monthWeekData[wi] += parseFloat(r.usage) || 0;
   });
-  // Round
   monthWeekData.forEach((v, i) => { monthWeekData[i] = parseFloat(v.toFixed(1)); });
 
-  // [日] 今日各小時折線圖（24 小時）
   const hourLabels = Array.from({ length: 24 }, (_, i) => `${String(i).padStart(2,'0')}:00`);
   const hourData   = Array(24).fill(null);
-  const todayHourRecs = recs.filter(r => toDateStr(r) === todayStr);
-  todayHourRecs.forEach(r => {
+  recs.filter(r => toDateStr(r) === todayStr).forEach(r => {
     const h = toHourStr(r);
     if (h) {
       const idx = parseInt(h.split(':')[0]);
       if (idx >= 0 && idx < 24) hourData[idx] = parseFloat(r.usage) || 0;
     }
   });
-  // 若記錄本身只有 daily usage 沒有分時，就將 todayVal 放在最後一個非 null 點
-  const hasHourData = hourData.some(v => v !== null);
-  if (!hasHourData && todayVal > 0) {
+  if (!hourData.some(v => v !== null) && todayVal > 0) {
     hourData[now.getHours()] = todayVal;
   }
 
-  // ── Render ─────────────────────────────────────────────────────────────────
-  document.getElementById('page').innerHTML =
-    layoutStart('energy', '能源監控', name, room, sid) +
-    `<div class="p-6 max-w-6xl mx-auto">
+  // ── 6. 渲染頁面 ──────────────────────────────────────────────────────────
+  document.getElementById('page').innerHTML = `
+    <div class="flex min-h-screen">
 
-      <div class="mb-8">
-        <h1 class="text-3xl font-semibold text-gray-900 mb-1">能源監控追蹤</h1>
-        <p class="text-gray-500 text-sm">監控您的用電情況，養成良好的節能習慣</p>
-      </div>
-
-      <!-- 3 Stat Cards -->
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
-
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <div class="flex items-start justify-between mb-3">
-            <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
-              <i data-lucide="zap" class="w-5 h-5 text-green-600"></i>
+      <!-- 側邊欄 -->
+      <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
+        <div class="p-6 border-b border-gray-100">
+          <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+              <i data-lucide="house" class="w-5 h-5 text-white"></i>
             </div>
-            ${todayVal > 25
-              ? '<span class="text-xs font-medium text-red-500">超過上限</span>'
-              : todayVal >= 20
-                ? '<span class="text-xs font-medium text-yellow-500">接近上限</span>'
-                : '<span class="text-xs font-medium text-green-600">正常範圍</span>'}
-          </div>
-          <p class="text-gray-500 text-sm mb-0.5">今日用電</p>
-          <p class="text-2xl font-bold text-gray-900">${todayVal.toFixed(1)} <span class="text-sm font-normal text-gray-400">kWh</span></p>
-          <p class="text-xs text-gray-400 mt-1">目標: &lt; 20 kWh</p>
-        </div>
-
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <div class="flex items-start justify-between mb-3">
-            <div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
-              <i data-lucide="calendar-days" class="w-5 h-5 text-yellow-600"></i>
+            <div>
+              <p class="font-semibold text-gray-900 text-sm">智慧宿舍系統</p>
+              <p class="text-xs text-gray-400">Smart Dorm</p>
             </div>
-            ${weekVal > 175
-              ? '<span class="text-xs font-medium text-red-500">超過上限</span>'
-              : weekVal >= 140
-                ? '<span class="text-xs font-medium text-yellow-500">接近上限</span>'
-                : '<span class="text-xs font-medium text-green-600">正常範圍</span>'}
           </div>
-          <p class="text-gray-500 text-sm mb-0.5">本週用電</p>
-          <p class="text-2xl font-bold text-gray-900">${weekVal.toFixed(1)} <span class="text-sm font-normal text-gray-400">kWh</span></p>
-          <p class="text-xs text-gray-400 mt-1">目標: &lt; 140 kWh</p>
         </div>
 
-        <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-          <div class="flex items-start justify-between mb-3">
-            <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
-              <i data-lucide="trending-up" class="w-5 h-5 text-blue-500"></i>
+        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+          <a href="./dashboard.html"
+             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 首頁 Dashboard
+          </a>
+          <a href="./room-control.html"
+             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+            <i data-lucide="home" class="w-4 h-4"></i> 房間控制
+          </a>
+          <a href="./energy.html"
+             class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-medium">
+            <i data-lucide="zap" class="w-4 h-4"></i> 能源監控
+          </a>
+          <a href="./package.html"
+             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+            <i data-lucide="package" class="w-4 h-4"></i> 包裹管理
+          </a>
+          <a href="./maintenance.html"
+             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+            <i data-lucide="wrench" class="w-4 h-4"></i> 維修報修
+          </a>
+          <a href="./visitor.html"
+             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+            <i data-lucide="users" class="w-4 h-4"></i> 訪客管理
+          </a>
+          <a href="./medical.html"
+             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+            <i data-lucide="heart-pulse" class="w-4 h-4"></i> 緊急通知
+          </a>
+        </nav>
+
+        <div class="p-4 border-t border-gray-100">
+          <div class="flex items-center gap-3 mb-3">
+            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+              <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
             </div>
-            ${monthChangePct !== null
-              ? `<span class="text-xs font-medium ${parseFloat(monthChangePct) > 0 ? 'text-blue-500' : 'text-green-600'}">較上月 ${parseFloat(monthChangePct) > 0 ? '+' : ''}${monthChangePct}%</span>`
-              : '<span class="text-xs text-gray-400">本月累計</span>'}
+            <div class="flex-1 min-w-0">
+              <p class="text-sm font-medium text-gray-900 truncate">${name}</p>
+              <p class="text-xs text-gray-400 truncate">${room}</p>
+            </div>
           </div>
-          <p class="text-gray-500 text-sm mb-0.5">本月用電</p>
-          <p class="text-2xl font-bold text-gray-900">${monthVal.toFixed(1)} <span class="text-sm font-normal text-gray-400">kWh</span></p>
-          <p class="text-xs text-gray-400 mt-1">目標: &lt; 500 kWh</p>
+          <button id="logoutBtn"
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500
+                   hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
+            <i data-lucide="log-out" class="w-4 h-4"></i> 登出
+          </button>
         </div>
-      </div>
+      </aside>
 
-      <!-- Chart Card -->
-      <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
-        <div class="flex items-center justify-between mb-5">
-          <h2 class="text-base font-semibold text-gray-900">用電趨勢分析</h2>
-          <div class="flex rounded-lg overflow-hidden border border-gray-200">
-            <button id="tabDay"   onclick="switchEnergyTab('day')"
-              class="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 transition-colors">日</button>
-            <button id="tabWeek"  onclick="switchEnergyTab('week')"
-              class="px-3 py-1.5 text-xs bg-blue-600 text-white font-medium">週</button>
-            <button id="tabMonth" onclick="switchEnergyTab('month')"
-              class="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 transition-colors">月</button>
+      <!-- 主內容 -->
+      <div class="flex-1 flex flex-col ml-64 min-h-screen">
+        <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
+          <h1 class="text-xl font-semibold text-gray-900">能源監控</h1>
+          <p class="text-sm text-gray-400">${room}｜${sid}</p>
+        </header>
+
+        <main class="p-6 max-w-6xl mx-auto w-full">
+          <div class="mb-8">
+            <h1 class="text-3xl font-semibold text-gray-900 mb-1">能源監控追蹤</h1>
+            <p class="text-gray-500 text-sm">監控您的用電情況，養成良好的節能習慣</p>
           </div>
-        </div>
-        <div style="height:260px">
-          <canvas id="energyChart"></canvas>
-        </div>
-        <div id="chartLegend" class="flex items-center justify-center gap-6 mt-4 text-xs text-gray-600">
-          <span class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-sm inline-block" style="background:#22c55e"></span>正常 (&lt;20 kWh/日)
-          </span>
-          <span class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-sm inline-block" style="background:#eab308"></span>警戒 (20-25 kWh/日)
-          </span>
-          <span class="flex items-center gap-1.5">
-            <span class="w-3 h-3 rounded-sm inline-block" style="background:#ef4444"></span>超標 (&gt;25 kWh/日)
-          </span>
-        </div>
-      </div>
 
-      <!-- Bottom: Table + Sidebar -->
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-        <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
-          <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
-            <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
-            <h2 class="text-sm font-semibold text-gray-900">用電記錄</h2>
-          </div>
-          <div class="overflow-x-auto">
-            <table class="w-full text-sm">
-              <thead>
-                <tr class="border-b border-gray-100">
-                  <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">日期</th>
-                  <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">用電量</th>
-                  <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">狀態等級</th>
-                  <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">評估</th>
-                </tr>
-              </thead>
-              <tbody>
-                ${recs.length === 0
-                  ? '<tr><td colspan="4" class="py-10 text-center text-gray-400 text-sm">尚無用電紀錄，Node-RED 接入後將自動顯示</td></tr>'
-                  : recs.map(r => {
-                      const v = parseFloat(r.usage) || 0;
-                      return `<tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
-                        <td class="py-3 px-4 text-gray-700">${toDateStr(r) || '—'}</td>
-                        <td class="py-3 px-4 font-semibold text-gray-900">${v.toFixed(1)} kWh</td>
-                        <td class="py-3 px-4">${getStatusBadge(v)}</td>
-                        <td class="py-3 px-4">${getEvalText(v)}</td>
-                      </tr>`;
-                    }).join('')}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="space-y-4">
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <h3 class="text-sm font-semibold text-gray-900 mb-4">節能建議</h3>
-            <div class="space-y-3">
-              <div class="p-3 bg-green-50 rounded-lg flex gap-3 items-start">
-                <div class="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i data-lucide="thermometer" class="w-3.5 h-3.5 text-green-600"></i>
+          <!-- 3 Stat Cards -->
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mb-6">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <i data-lucide="zap" class="w-5 h-5 text-green-600"></i>
                 </div>
-                <div>
-                  <p class="text-xs font-semibold text-green-800">冷氣溫度建議</p>
-                  <p class="text-xs text-green-700 mt-0.5">設定在 26-28°C 最節能</p>
-                </div>
+                ${todayVal > 25
+                  ? '<span class="text-xs font-medium text-red-500">超過上限</span>'
+                  : todayVal >= 20
+                    ? '<span class="text-xs font-medium text-yellow-500">接近上限</span>'
+                    : '<span class="text-xs font-medium text-green-600">正常範圍</span>'}
               </div>
-              <div class="p-3 bg-blue-50 rounded-lg flex gap-3 items-start">
-                <div class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i data-lucide="zap-off" class="w-3.5 h-3.5 text-blue-600"></i>
+              <p class="text-gray-500 text-sm mb-0.5">今日用電</p>
+              <p class="text-2xl font-bold text-gray-900">${todayVal.toFixed(1)} <span class="text-sm font-normal text-gray-400">kWh</span></p>
+              <p class="text-xs text-gray-400 mt-1">目標: &lt; 20 kWh</p>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-yellow-50 flex items-center justify-center">
+                  <i data-lucide="calendar-days" class="w-5 h-5 text-yellow-600"></i>
                 </div>
-                <div>
-                  <p class="text-xs font-semibold text-blue-800">離開時關閉設備</p>
-                  <p class="text-xs text-blue-700 mt-0.5">外出時記得關閉不必要的電器</p>
-                </div>
+                ${weekVal > 175
+                  ? '<span class="text-xs font-medium text-red-500">超過上限</span>'
+                  : weekVal >= 140
+                    ? '<span class="text-xs font-medium text-yellow-500">接近上限</span>'
+                    : '<span class="text-xs font-medium text-green-600">正常範圍</span>'}
               </div>
-              <div class="p-3 bg-yellow-50 rounded-lg flex gap-3 items-start">
-                <div class="w-7 h-7 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0 mt-0.5">
-                  <i data-lucide="triangle-alert" class="w-3.5 h-3.5 text-yellow-600"></i>
+              <p class="text-gray-500 text-sm mb-0.5">本週用電</p>
+              <p class="text-2xl font-bold text-gray-900">${weekVal.toFixed(1)} <span class="text-sm font-normal text-gray-400">kWh</span></p>
+              <p class="text-xs text-gray-400 mt-1">目標: &lt; 140 kWh</p>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <i data-lucide="trending-up" class="w-5 h-5 text-blue-500"></i>
                 </div>
-                <div>
-                  <p class="text-xs font-semibold text-yellow-800">尖峰時段提醒</p>
-                  <p class="text-xs text-yellow-700 mt-0.5">下午2-4點用電較貴，盡量避開</p>
-                </div>
+                ${monthChangePct !== null
+                  ? `<span class="text-xs font-medium ${parseFloat(monthChangePct) > 0 ? 'text-blue-500' : 'text-green-600'}">較上月 ${parseFloat(monthChangePct) > 0 ? '+' : ''}${monthChangePct}%</span>`
+                  : '<span class="text-xs text-gray-400">本月累計</span>'}
+              </div>
+              <p class="text-gray-500 text-sm mb-0.5">本月用電</p>
+              <p class="text-2xl font-bold text-gray-900">${monthVal.toFixed(1)} <span class="text-sm font-normal text-gray-400">kWh</span></p>
+              <p class="text-xs text-gray-400 mt-1">目標: &lt; 500 kWh</p>
+            </div>
+          </div>
+
+          <!-- 圖表卡片 -->
+          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-6 mb-6">
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-base font-semibold text-gray-900">用電趨勢分析</h2>
+              <div class="flex rounded-lg overflow-hidden border border-gray-200">
+                <button id="tabDay"   onclick="switchEnergyTab('day')"
+                  class="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 transition-colors">日</button>
+                <button id="tabWeek"  onclick="switchEnergyTab('week')"
+                  class="px-3 py-1.5 text-xs bg-blue-600 text-white font-medium">週</button>
+                <button id="tabMonth" onclick="switchEnergyTab('month')"
+                  class="px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 transition-colors">月</button>
               </div>
             </div>
+            <div style="height:260px">
+              <canvas id="energyChart"></canvas>
+            </div>
+            <div id="chartLegend" class="flex items-center justify-center gap-6 mt-4 text-xs text-gray-600">
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-sm inline-block" style="background:#22c55e"></span>正常 (&lt;20 kWh/日)
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-sm inline-block" style="background:#eab308"></span>警戒 (20-25 kWh/日)
+              </span>
+              <span class="flex items-center gap-1.5">
+                <span class="w-3 h-3 rounded-sm inline-block" style="background:#ef4444"></span>超標 (&gt;25 kWh/日)
+              </span>
+            </div>
           </div>
 
-          <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
-            <h3 class="text-sm font-semibold text-gray-900 mb-4">本月用電進度</h3>
-            <div class="flex justify-between text-xs text-gray-500 mb-2">
-              <span>已使用</span>
-              <span class="font-medium">${monthVal.toFixed(1)} / ${MONTH_LIMIT} kWh</span>
-            </div>
-            <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
-              <div class="h-full rounded-full transition-all duration-700"
-                style="width:${monthPct.toFixed(1)}%; background:${monthPct > 87 ? '#ef4444' : '#eab308'}">
+          <!-- 底部：紀錄表格 + 側邊資訊 -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+              <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+                <i data-lucide="calendar" class="w-4 h-4 text-gray-400"></i>
+                <h2 class="text-sm font-semibold text-gray-900">用電記錄</h2>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-sm">
+                  <thead>
+                    <tr class="border-b border-gray-100">
+                      <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">日期</th>
+                      <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">用電量</th>
+                      <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">狀態等級</th>
+                      <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">評估</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${recs.length === 0
+                      ? '<tr><td colspan="4" class="py-10 text-center text-gray-400 text-sm">尚無用電紀錄，Node-RED 接入後將自動顯示</td></tr>'
+                      : recs.map(r => {
+                          const v = parseFloat(r.usage) || 0;
+                          return `<tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                            <td class="py-3 px-4 text-gray-700">${toDateStr(r) || '—'}</td>
+                            <td class="py-3 px-4 font-semibold text-gray-900">${v.toFixed(1)} kWh</td>
+                            <td class="py-3 px-4">${getStatusBadge(v)}</td>
+                            <td class="py-3 px-4">${getEvalText(v)}</td>
+                          </tr>`;
+                        }).join('')}
+                  </tbody>
+                </table>
               </div>
             </div>
-            <p class="text-xs font-medium ${parseFloat(remainPct) <= 13 ? 'text-red-500' : 'text-yellow-500'}">
-              剩餘 ${monthRemain} kWh (${remainPct}%)
-            </p>
+
+            <div class="space-y-4">
+              <!-- 節能建議 -->
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <h3 class="text-sm font-semibold text-gray-900 mb-4">節能建議</h3>
+                <div class="space-y-3">
+                  <div class="p-3 bg-green-50 rounded-lg flex gap-3 items-start">
+                    <div class="w-7 h-7 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i data-lucide="thermometer" class="w-3.5 h-3.5 text-green-600"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs font-semibold text-green-800">冷氣溫度建議</p>
+                      <p class="text-xs text-green-700 mt-0.5">設定在 26-28°C 最節能</p>
+                    </div>
+                  </div>
+                  <div class="p-3 bg-blue-50 rounded-lg flex gap-3 items-start">
+                    <div class="w-7 h-7 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i data-lucide="zap-off" class="w-3.5 h-3.5 text-blue-600"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs font-semibold text-blue-800">離開時關閉設備</p>
+                      <p class="text-xs text-blue-700 mt-0.5">外出時記得關閉不必要的電器</p>
+                    </div>
+                  </div>
+                  <div class="p-3 bg-yellow-50 rounded-lg flex gap-3 items-start">
+                    <div class="w-7 h-7 rounded-full bg-yellow-100 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <i data-lucide="triangle-alert" class="w-3.5 h-3.5 text-yellow-600"></i>
+                    </div>
+                    <div>
+                      <p class="text-xs font-semibold text-yellow-800">尖峰時段提醒</p>
+                      <p class="text-xs text-yellow-700 mt-0.5">下午2-4點用電較貴，盡量避開</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 本月進度條 -->
+              <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+                <h3 class="text-sm font-semibold text-gray-900 mb-4">本月用電進度</h3>
+                <div class="flex justify-between text-xs text-gray-500 mb-2">
+                  <span>已使用</span>
+                  <span class="font-medium">${monthVal.toFixed(1)} / ${MONTH_LIMIT} kWh</span>
+                </div>
+                <div class="w-full h-2.5 bg-gray-100 rounded-full overflow-hidden mb-2">
+                  <div class="h-full rounded-full transition-all duration-700"
+                    style="width:${monthPct.toFixed(1)}%; background:${monthPct > 87 ? '#ef4444' : '#eab308'}">
+                  </div>
+                </div>
+                <p class="text-xs font-medium ${parseFloat(remainPct) <= 13 ? 'text-red-500' : 'text-yellow-500'}">
+                  剩餘 ${monthRemain} kWh (${remainPct}%)
+                </p>
+              </div>
+            </div>
           </div>
-        </div>
+        </main>
       </div>
-    </div>` +
-    layoutEnd();
+    </div>
+  `;
 
-  initIcons();
-  initLogout();
+  // ── 7. 登出按鈕 ──────────────────────────────────────────────────────────
+  document.getElementById('logoutBtn').addEventListener('click', () => {
+    localStorage.clear();
+    window.location.href = './login.html';
+  });
 
-  // ── Chart.js ───────────────────────────────────────────────────────────────
+  lucide.createIcons();
+
+  // ── 8. Chart.js ──────────────────────────────────────────────────────────
   let energyChart = null;
 
   function buildChart(tab) {
-    const ctx = document.getElementById('energyChart');
+    const ctx    = document.getElementById('energyChart');
     const legend = document.getElementById('chartLegend');
     if (!ctx) return;
     if (energyChart) energyChart.destroy();
 
-    // 日 → 折線圖
     if (tab === 'day') {
       if (legend) legend.innerHTML = `
         <span class="flex items-center gap-1.5">
           <span class="w-8 h-0.5 inline-block rounded" style="background:#3b82f6"></span>
           用電量 (kWh)
         </span>`;
-
       energyChart = new Chart(ctx, {
         type: 'line',
         data: {
@@ -358,8 +435,7 @@ requireAuth(async user => {
           }]
         },
         options: {
-          responsive: true,
-          maintainAspectRatio: false,
+          responsive: true, maintainAspectRatio: false,
           plugins: {
             legend: { display: false },
             tooltip: {
@@ -370,32 +446,17 @@ requireAuth(async user => {
             }
           },
           scales: {
-            x: {
-              grid: { color: '#f3f4f6' },
-              ticks: {
-                font: { family: 'Noto Sans TC', size: 11 },
-                maxTicksLimit: 9
-              }
-            },
-            y: {
-              beginAtZero: true,
-              grid: { color: '#f3f4f6' },
-              ticks: {
-                font: { family: 'Noto Sans TC', size: 11 },
-                callback: v => v + ' kWh'
-              }
-            }
+            x: { grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Noto Sans TC', size: 11 }, maxTicksLimit: 9 } },
+            y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Noto Sans TC', size: 11 }, callback: v => v + ' kWh' } }
           }
         }
       });
       return;
     }
 
-    // 週 / 月 → 彩色長條圖
-    const isWeek = tab === 'week';
-    const labels = isWeek ? weekLabels : monthWeekLabels;
-    const data   = isWeek ? weekChartData : monthWeekData;
-    // 月的閾值以週計（週目標 140 kWh）
+    const isWeek  = tab === 'week';
+    const labels  = isWeek ? weekLabels : monthWeekLabels;
+    const data    = isWeek ? weekChartData : monthWeekData;
     const bgColors = isWeek
       ? data.map(v => v > 25 ? '#ef4444' : v >= 20 ? '#eab308' : '#22c55e')
       : data.map(v => v > 140 ? '#ef4444' : v >= 100 ? '#eab308' : '#22c55e');
@@ -424,16 +485,9 @@ requireAuth(async user => {
         }]
       },
       options: {
-        responsive: true,
-        maintainAspectRatio: false,
+        responsive: true, maintainAspectRatio: false,
         plugins: {
-          legend: {
-            position: 'bottom',
-            labels: {
-              boxWidth: 12,
-              font: { family: 'Noto Sans TC', size: 12 }
-            }
-          },
+          legend: { position: 'bottom', labels: { boxWidth: 12, font: { family: 'Noto Sans TC', size: 12 } } },
           tooltip: {
             callbacks: {
               title: items => items[0].label,
@@ -442,18 +496,8 @@ requireAuth(async user => {
           }
         },
         scales: {
-          x: {
-            grid: { display: false },
-            ticks: { font: { family: 'Noto Sans TC', size: 11 } }
-          },
-          y: {
-            beginAtZero: true,
-            grid: { color: '#f3f4f6' },
-            ticks: {
-              font: { family: 'Noto Sans TC', size: 11 },
-              callback: v => v + ' kWh'
-            }
-          }
+          x: { grid: { display: false }, ticks: { font: { family: 'Noto Sans TC', size: 11 } } },
+          y: { beginAtZero: true, grid: { color: '#f3f4f6' }, ticks: { font: { family: 'Noto Sans TC', size: 11 }, callback: v => v + ' kWh' } }
         }
       }
     });
@@ -471,7 +515,6 @@ requireAuth(async user => {
         : 'px-3 py-1.5 text-xs text-gray-500 hover:bg-gray-50 transition-colors';
     });
   };
-});
 </script>
 </body>
 </html>

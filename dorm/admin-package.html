@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>包裹管理系統 - 管理端</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+  <div class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+          <i data-lucide="package" class="text-blue-600"></i> 包裹入庫登記
+        </h1>
+        <p class="text-slate-500 text-sm mt-1">登記新到包裹，並管理學生領取狀態</p>
+      </div>
+      <a href="./admin-dashboard.html" class="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回儀表板
+      </a>
+    </div>
+
+    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-8">
+      <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">
+        <i data-lucide="plus-circle" class="w-5 h-5"></i> 新增入庫包裹
+      </h2>
+      <form id="packageForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">收件人學號</label>
+          <input type="text" id="pStudentId" placeholder="輸入學號" class="w-full border p-3 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">物流公司</label>
+          <input type="text" id="pCourier" placeholder="如：黑貓、蝦皮、郵局" class="w-full border p-3 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">單號/取件末三碼</label>
+          <input type="text" id="pTracking" placeholder="輸入單號" class="w-full border p-3 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+        </div>
+        <div class="flex items-end">
+          <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+            登記包裹
+          </button>
+        </div>
+      </form>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="lg:col-span-2">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
+            <span class="font-bold text-slate-700">目前庫存待領包裹</span>
+            <span id="waitingCount" class="bg-orange-100 text-orange-600 text-xs px-3 py-1 rounded-full font-bold">0 件待領</span>
+          </div>
+          <div class="divide-y divide-slate-100" id="waitingList">
+            </div>
+        </div>
+      </div>
+
+      <div class="lg:col-span-1">
+        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden text-sm">
+          <div class="p-5 bg-slate-50 border-b font-bold text-slate-700">最近完成領取</div>
+          <div class="divide-y divide-slate-50" id="historyList">
+            </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="alarmAudio" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto"></audio>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, doc, addDoc, onSnapshot, updateDoc, query, where, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = { 
+      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I", 
+      authDomain: "smartdorm-3ab79.firebaseapp.com", 
+      projectId: "smartdorm-3ab79", 
+      storageBucket: "smartdorm-3ab79.firebasestorage.app", 
+      messagingSenderId: "240227925869", 
+      appId: "1:240227925869:web:5a71f95a2f18bef1972464" 
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 1. 權限檢查
+    if (localStorage.getItem('userRole') !== 'admin') window.location.href = './login.html';
+
+    // 2. 緊急醫療監聽器
+    const alarm = document.getElementById('alarmAudio');
+    onSnapshot(query(collection(db, 'medical'), where('status', '==', 'processing')), snap => {
+      if (!snap.empty) {
+        alarm.play().catch(() => {});
+        const data = snap.docs[0].data();
+        if(confirm(`🚨 【緊急求助】\n\n房號：${data.room}\n姓名：${data.name}\n\n立即前往處理？`)) window.location.href = './admin-medical.html';
+      }
+    });
+
+    // 3. 登記包裹
+    document.getElementById('packageForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const sId = document.getElementById('pStudentId').value.trim();
+      const courier = document.getElementById('pCourier').value.trim();
+      const track = document.getElementById('pTracking').value.trim();
+
+      try {
+        await addDoc(collection(db, 'packages'), {
+          studentId: sId,
+          courier: courier,
+          trackingNumber: track,
+          status: 'waiting',
+          createdAt: serverTimestamp(),
+          storageLocation: '宿舍管理室'
+        });
+        e.target.reset();
+        alert('✅ 包裹入庫登記成功');
+      } catch (err) {
+        alert('❌ 錯誤：' + err.message);
+      }
+    };
+
+    // 4. 監聽待領清單
+    onSnapshot(query(collection(db, 'packages'), where('status', '==', 'waiting'), orderBy('createdAt', 'desc')), snap => {
+      const list = document.getElementById('waitingList');
+      document.getElementById('waitingCount').innerText = `${snap.size} 件待領`;
+      
+      list.innerHTML = snap.docs.map(d => {
+        const p = d.data();
+        const date = p.createdAt?.toDate().toLocaleDateString() || '剛才';
+        return `
+          <div class="p-5 flex justify-between items-center hover:bg-slate-50 transition-colors">
+            <div>
+              <p class="font-bold text-lg text-slate-800">${p.studentId}</p>
+              <p class="text-sm text-slate-500">${p.courier} | 單號：${p.trackingNumber}</p>
+              <p class="text-[10px] text-slate-300 mt-1">入庫時間：${date}</p>
+            </div>
+            <button onclick="confirmPickup('${d.id}')" class="bg-emerald-50 text-emerald-600 px-4 py-2 rounded-xl font-bold hover:bg-emerald-600 hover:text-white transition-all border border-emerald-100">
+              確認領取
+            </button>
+          </div>
+        `;
+      }).join('') || '<div class="p-10 text-center text-slate-400 italic">目前無待領包裹</div>';
+    });
+
+    // 5. 監聽歷史紀錄 (最近領取)
+    onSnapshot(query(collection(db, 'packages'), where('status', '==', 'picked'), orderBy('pickupDate', 'desc')), snap => {
+      const list = document.getElementById('historyList');
+      list.innerHTML = snap.docs.slice(0, 8).map(d => {
+        const p = d.data();
+        return `
+          <div class="p-4 bg-white">
+            <p class="font-medium text-slate-700">${p.studentId}</p>
+            <p class="text-xs text-slate-400">${p.courier} (${p.trackingNumber})</p>
+            <p class="text-[10px] text-emerald-500 font-bold mt-1">領取於：${p.pickupDate}</p>
+          </div>
+        `;
+      }).join('');
+    });
+
+    // 6. 確認領取功能
+    window.confirmPickup = async (id) => {
+      if(confirm('確認該學生已到場並領取包裹？')) {
+        await updateDoc(doc(db, 'packages', id), {
+          status: 'picked',
+          pickupDate: new Date().toLocaleString('zh-TW')
+        });
+      }
+    };
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

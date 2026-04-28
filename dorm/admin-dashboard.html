@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>管理系統儀表板 - 智慧宿舍</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; }
+    .emergency-glow { animation: glow 1.5s infinite; }
+    @keyframes glow {
+      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+  <div class="flex min-h-screen">
+    <aside class="w-64 bg-slate-900 text-white fixed inset-y-0 flex flex-col p-6 z-50">
+      <div class="flex items-center gap-3 mb-10 pb-6 border-b border-slate-800">
+        <div class="bg-blue-600 p-2 rounded-lg"><i data-lucide="shield-check"></i></div>
+        <span class="font-bold text-xl uppercase tracking-wider">管理端後台</span>
+      </div>
+      
+      <nav class="flex-1 space-y-2 text-sm">
+        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-xl font-bold transition-all">
+          <i data-lucide="layout-dashboard"></i> 數據概覽
+        </a>
+        <a href="./admin-students.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
+          <i data-lucide="users"></i> 學生名單管理
+        </a>
+        <a href="./admin-package.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
+          <i data-lucide="package"></i> 包裹入庫登記
+        </a>
+        <a href="./admin-visitor.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
+          <i data-lucide="user-plus"></i> 訪客申請審核
+        </a>
+        <a href="./admin-maintenance.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
+          <i data-lucide="wrench"></i> 設備報修處理
+        </a>
+        <a href="./admin-medical.html" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/30 rounded-xl transition-all font-bold">
+          <i data-lucide="ambulance"></i> 緊急醫療監控
+        </a>
+      </nav>
+
+      <button id="logoutBtn" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-400 transition-colors text-sm border-t border-slate-800 mt-4 pt-4">
+        <i data-lucide="log-out"></i> 安全登出
+      </button>
+    </aside>
+
+    <main class="flex-1 ml-64 p-10">
+      <header class="mb-10">
+        <h1 class="text-3xl font-bold text-slate-800">智慧宿舍系統概覽</h1>
+        <p class="text-slate-500 mt-1" id="dateDisplay"></p>
+      </header>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div id="medCard" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all">
+          <div class="flex justify-between items-start mb-4">
+            <div class="p-3 rounded-2xl bg-slate-50 text-slate-400" id="medIconBox"><i data-lucide="ambulance"></i></div>
+            <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-400" id="medStatusTag">正常</span>
+          </div>
+          <p class="text-slate-500 text-sm">緊急求助案件</p>
+          <div id="medCount" class="text-3xl font-bold mt-1">0</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div class="flex justify-between items-start mb-4">
+            <div class="p-3 rounded-2xl bg-blue-50 text-blue-600"><i data-lucide="package"></i></div>
+            <span class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-600">待領</span>
+          </div>
+          <p class="text-slate-500 text-sm">包裹待領取</p>
+          <div id="pkgCount" class="text-3xl font-bold mt-1">0</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div class="flex justify-between items-start mb-4">
+            <div class="p-3 rounded-2xl bg-purple-50 text-purple-600"><i data-lucide="user-check"></i></div>
+            <span class="text-xs font-bold px-2 py-1 rounded bg-purple-100 text-purple-600">審核中</span>
+          </div>
+          <p class="text-slate-500 text-sm">訪客申請待辦</p>
+          <div id="visCount" class="text-3xl font-bold mt-1">0</div>
+        </div>
+
+        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+          <div class="flex justify-between items-start mb-4">
+            <div class="p-3 rounded-2xl bg-orange-50 text-orange-600"><i data-lucide="wrench"></i></div>
+            <span class="text-xs font-bold px-2 py-1 rounded bg-orange-100 text-orange-600">維修中</span>
+          </div>
+          <p class="text-slate-500 text-sm">設備報修案件</p>
+          <div id="mntCount" class="text-3xl font-bold mt-1">0</div>
+        </div>
+      </div>
+      
+      <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="./admin-students.html" class="p-8 bg-white rounded-3xl border border-slate-200 hover:border-blue-500 transition-all group">
+          <h3 class="font-bold flex items-center gap-2 group-hover:text-blue-600"><i data-lucide="user-plus"></i> 管理學生名單</h3>
+          <p class="text-sm text-slate-400 mt-2">點擊進入新增、刪除或修改學生基本資料</p>
+        </a>
+      </div>
+    </main>
+  </div>
+
+  <audio id="alarmAudio" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto"></audio>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = { 
+      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I", 
+      authDomain: "smartdorm-3ab79.firebaseapp.com", 
+      projectId: "smartdorm-3ab79", 
+      storageBucket: "smartdorm-3ab79.firebasestorage.app", 
+      messagingSenderId: "240227925869", 
+      appId: "1:240227925869:web:5a71f95a2f18bef1972464" 
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 1. 權限與基礎顯示
+    if (localStorage.getItem('userRole') !== 'admin') window.location.href = './login.html';
+    document.getElementById('dateDisplay').innerText = new Date().toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+
+    const alarm = document.getElementById('alarmAudio');
+
+    // 2. 全域緊急醫療監聽器
+    onSnapshot(
+      query(collection(db, 'medical'), where('status', '==', 'processing')),
+      (snap) => {
+        const card = document.getElementById('medCard');
+        const countEl = document.getElementById('medCount');
+        const statusTag = document.getElementById('medStatusTag');
+        const iconBox = document.getElementById('medIconBox');
+        
+        const count = snap.size;
+        countEl.innerText = count;
+
+        if (count > 0) {
+          card.classList.add('emergency-glow', 'border-red-500', 'bg-red-50');
+          statusTag.innerText = '緊急';
+          statusTag.className = 'text-xs font-bold px-2 py-1 rounded bg-red-500 text-white';
+          iconBox.className = 'p-3 rounded-2xl bg-red-500 text-white';
+          
+          alarm.play().catch(() => console.log("等待點擊啟用音效"));
+
+          const data = snap.docs[0].data();
+          setTimeout(() => {
+            if (confirm(`🚨 【緊急醫療求助通報】\n\n房號：${data.room}\n學生：${data.name}\n學號：${data.studentId}\n\n是否立即前往處理？`)) {
+              window.location.href = './admin-medical.html';
+            }
+          }, 1000);
+        } else {
+          card.classList.remove('emergency-glow', 'border-red-500', 'bg-red-50');
+          statusTag.innerText = '正常';
+          statusTag.className = 'text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-400';
+          iconBox.className = 'p-3 rounded-2xl bg-slate-50 text-slate-400';
+          alarm.pause();
+          alarm.currentTime = 0;
+        }
+      }
+    );
+
+    // 3. 一般數據即時監聽
+    onSnapshot(
+      query(collection(db, 'packages'), where('status', '==', 'waiting')),
+      s => document.getElementById('pkgCount').innerText = s.size
+    );
+
+    // ⚠ 這一行的集合名稱請跟你 Firestore 實際一致：
+    // 如果你集合叫 "visitors"（複數），用下面這行；
+    // 如果叫 "visitor"（單數），改回 'visitor' 即可。
+    onSnapshot(
+      query(collection(db, 'visitors'), where('status', '==', 'pending')),
+      s => document.getElementById('visCount').innerText = s.size
+    );
+
+    onSnapshot(
+      query(collection(db, 'maintenance'), where('status', '==', '處理中')),
+      s => document.getElementById('mntCount').innerText = s.size
+    );
+
+    // 4. 登出
+    document.getElementById('logoutBtn').onclick = () => {
+      localStorage.clear();
+      window.location.href = './login.html';
+    };
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

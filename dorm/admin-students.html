@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>學生名單管理 - 智慧宿舍系統</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; }
+    /* 緊急警報視覺動畫 */
+    .emergency-border { animation: blink border-color 0.5s infinite alternate; border-width: 4px; }
+    @keyframes blink { from { border-color: #ef4444; } to { border-color: #fee2e2; } }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-900">
+
+  <div class="max-w-7xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-8">
+      <div>
+        <h1 class="text-2xl font-bold flex items-center gap-2">
+          <i data-lucide="users" class="text-blue-600"></i> 學生名單管理
+        </h1>
+        <p class="text-slate-500 text-sm mt-1">管理宿舍成員基本資料與帳號權限</p>
+      </div>
+      <a href="./admin-dashboard.html" class="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
+        <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回儀表板
+      </a>
+    </div>
+
+    <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
+      <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">
+        <i data-lucide="user-plus" class="w-5 h-5"></i> 輸入新學生
+      </h2>
+      <form id="studentForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">系級</label>
+          <input type="text" id="sClass" placeholder="例如：資管三B" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">學號 (登入帳號)</label>
+          <input type="text" id="sId" placeholder="學號" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">姓名</label>
+          <input type="text" id="sName" placeholder="姓名" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">電話</label>
+          <input type="tel" id="sPhone" placeholder="09xx-xxx-xxx" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">房號-床號</label>
+          <div class="flex gap-1">
+            <input type="text" id="sRoom" placeholder="房號" class="w-2/3 border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+            <input type="text" id="sBed" placeholder="床" class="w-1/3 border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+          </div>
+        </div>
+        <div class="flex items-end">
+          <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+            新增學生
+          </button>
+        </div>
+      </form>
+      <div id="formMsg" class="mt-4 p-3 rounded-xl text-sm hidden"></div>
+    </div>
+
+    <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+      <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
+        <span class="font-bold text-slate-700">全體成員列表</span>
+        <span id="studentCount" class="bg-blue-100 text-blue-700 text-xs px-3 py-1 rounded-full font-bold">載入中...</span>
+      </div>
+      <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="text-slate-400 text-xs uppercase tracking-wider border-b">
+              <th class="p-4 font-medium">系級</th>
+              <th class="p-4 font-medium">學號</th>
+              <th class="p-4 font-medium">姓名</th>
+              <th class="p-4 font-medium">電話</th>
+              <th class="p-4 font-medium">房號-床號</th>
+              <th class="p-4 font-medium text-center">操作</th>
+            </tr>
+          </thead>
+          <tbody id="studentList" class="divide-y divide-slate-100">
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <audio id="alarmAudio" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto"></audio>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = { 
+      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I", 
+      authDomain: "smartdorm-3ab79.firebaseapp.com", 
+      projectId: "smartdorm-3ab79", 
+      storageBucket: "smartdorm-3ab79.firebasestorage.app", 
+      messagingSenderId: "240227925869", 
+      appId: "1:240227925869:web:5a71f95a2f18bef1972464" 
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    // 1. 權限檢查
+    if (localStorage.getItem('userRole') !== 'admin') window.location.href = './login.html';
+
+    // 2. 全域緊急醫療監聽 (跨分頁提醒)
+    const alarm = document.getElementById('alarmAudio');
+    onSnapshot(query(collection(db, 'medical'), where('status', '==', 'processing')), snap => {
+      if (!snap.empty) {
+        alarm.play().catch(() => console.log("音效等待點擊觸發"));
+        const data = snap.docs[0].data();
+        setTimeout(() => {
+          if(confirm(`🚨 【緊急求助】\n\n房號：${data.room}\n學生：${data.name}\n\n是否立刻前往醫療分頁處理？`)) {
+            window.location.href = './admin-medical.html';
+          }
+        }, 500);
+      } else {
+        alarm.pause(); alarm.currentTime = 0;
+      }
+    });
+
+    // 3. 監聽學生清單
+    onSnapshot(collection(db, 'users'), snap => {
+      const list = document.getElementById('studentList');
+      const countEl = document.getElementById('studentCount');
+      
+      const students = snap.docs
+        .filter(d => d.data().role === 'student')
+        .map(d => ({ id: d.id, ...d.data() }));
+
+      countEl.innerText = `目前共計 ${students.length} 位學生`;
+
+      list.innerHTML = students.map(s => `
+        <tr class="hover:bg-slate-50 transition-colors">
+          <td class="p-4 text-slate-600">${s.class || '未設定'}</td>
+          <td class="p-4 font-mono font-bold text-blue-600">${s.studentId}</td>
+          <td class="p-4 font-semibold text-slate-800">${s.name}</td>
+          <td class="p-4 text-slate-500">${s.phone || '—'}</td>
+          <td class="p-4"><span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold">${s.room}-${s.bed}</span></td>
+          <td class="p-4 text-center">
+            <button onclick="deleteStudent('${s.id}')" class="text-slate-300 hover:text-red-500 transition-colors p-2">
+              <i data-lucide="trash-2" class="w-5 h-5"></i>
+            </button>
+          </td>
+        </tr>
+      `).join('') || '<tr><td colspan="6" class="p-20 text-center text-slate-400">目前無學生資料</td></tr>';
+      
+      lucide.createIcons();
+    });
+
+    // 4. 新增學生邏輯
+    document.getElementById('studentForm').onsubmit = async (e) => {
+      e.preventDefault();
+      const msg = document.getElementById('formMsg');
+      const sId = document.getElementById('sId').value.trim();
+
+      try {
+        await setDoc(doc(db, 'users', sId), {
+          class: document.getElementById('sClass').value.trim(),
+          studentId: sId,
+          name: document.getElementById('sName').value.trim(),
+          phone: document.getElementById('sPhone').value.trim(),
+          room: document.getElementById('sRoom').value.trim(),
+          bed: document.getElementById('sBed').value.trim(),
+          password: sId, // 預設密碼同學號
+          role: 'student'
+        });
+
+        msg.innerText = '✅ 學生帳號已成功建立 (預設密碼同學號)';
+        msg.className = 'mt-4 p-3 rounded-xl text-sm bg-green-50 text-green-700 block font-bold';
+        e.target.reset();
+      } catch (err) {
+        msg.innerText = '❌ 錯誤：' + err.message;
+        msg.className = 'mt-4 p-3 rounded-xl text-sm bg-red-50 text-red-700 block';
+      }
+      setTimeout(() => msg.classList.add('hidden'), 5000);
+    };
+
+    // 5. 刪除學生邏輯
+    window.deleteStudent = async (id) => {
+      if(confirm(`確定要將學號 ${id} 從系統中永久移除嗎？\n此動作將使其無法登入。`)) {
+        await deleteDoc(doc(db, 'users', id));
+      }
+    };
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>

@@ -290,16 +290,16 @@
     'packages'
   );
 
-  // 10. 監聽 visitors
+  // 10. 監聽 visitor
   tryOnSnapshot(
-    collection(db, 'visitors'),
+    collection(db, 'visitor'),
     (snap) => {
       statsData.visCount = snap.docs.filter(d =>
         ['pending', 'approved'].includes(d.data().status)
       ).length;
       updateContent();
     },
-    'visitors'
+    'visitor'
   );
 
   // 11. 監聽 maintenance

@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>緊急醫療監控 - 智慧宿舍</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; }
+    /* 強力閃爍動畫 */
+    .alert-active { animation: alert-red 0.8s infinite alternate; }
+    @keyframes alert-red {
+      from { background-color: #fef2f2; border-color: #ef4444; box-shadow: 0 0 10px #f87171; }
+      to { background-color: #fee2e2; border-color: #b91c1c; box-shadow: 0 0 30px #ef4444; }
+    }
+    .pulse-icon { animation: pulse 1s infinite; }
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0.7; }
+      100% { transform: scale(1); opacity: 1; }
+    }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen">
+
+  <div class="max-w-6xl mx-auto p-6">
+    <div class="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
+      <div class="flex items-center gap-4">
+        <div class="bg-red-600 p-3 rounded-2xl shadow-lg shadow-red-900/20 pulse-icon">
+          <i data-lucide="ambulance" class="w-8 h-8 text-white"></i>
+        </div>
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-white">醫療緊急通報中心</h1>
+          <p class="text-slate-400 text-sm">即時監控全校舍求助訊號 (24H)</p>
+        </div>
+      </div>
+      <a href="./admin-dashboard.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-2 rounded-xl transition-all flex items-center gap-2 border border-slate-700">
+        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 儀表板
+      </a>
+    </div>
+
+    <div id="audioNotice" class="mb-6 bg-blue-900/30 border border-blue-500/50 p-4 rounded-2xl text-blue-200 text-sm flex items-center justify-between">
+      <p class="flex items-center gap-2">
+        <i data-lucide="volume-2" class="w-4 h-4"></i> 瀏覽器音效功能檢查：請點擊右側按鈕以確保警報聲可正常播放。
+      </p>
+      <button onclick="enableAudio()" class="bg-blue-600 text-white px-4 py-1 rounded-lg text-xs font-bold hover:bg-blue-500 transition-colors">測試音效</button>
+    </div>
+
+    <section class="mb-12">
+      <h2 class="text-red-500 font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
+        <span class="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> 正在發生的求助案件
+      </h2>
+      <div id="activeAlerts" class="space-y-6">
+        <div class="bg-slate-800/50 p-20 text-center rounded-3xl border border-slate-700 text-slate-500 italic">
+          目前暫無緊急求助訊號，系統持續監視中...
+        </div>
+      </div>
+    </section>
+
+    <section>
+      <h2 class="text-slate-400 font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
+        <i data-lucide="history" class="w-4 h-4"></i> 最近處理紀錄 (今日)
+      </h2>
+      <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl">
+        <table class="w-full text-left">
+          <thead class="bg-slate-700/50 text-slate-400 text-xs uppercase">
+            <tr>
+              <th class="p-4">通報時間</th>
+              <th class="p-4">學生資訊</th>
+              <th class="p-4">房號-床號</th>
+              <th class="p-4">處置進度</th>
+              <th class="p-4">反應時間</th>
+            </tr>
+          </thead>
+          <tbody id="historyList" class="text-sm divide-y divide-slate-700/50">
+            </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <audio id="alarmSound" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto" loop></audio>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, collection, doc, onSnapshot, updateDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = { 
+      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I", 
+      authDomain: "smartdorm-3ab79.firebaseapp.com", 
+      projectId: "smartdorm-3ab79", 
+      storageBucket: "smartdorm-3ab79.firebasestorage.app", 
+      messagingSenderId: "240227925869", 
+      appId: "1:240227925869:web:5a71f95a2f18bef1972464" 
+    };
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const alarm = document.getElementById('alarmSound');
+    window.enableAudio = () => {
+      alarm.play().then(() => {
+        alarm.pause(); alarm.currentTime = 0;
+        alert("音效功能已啟用！當有緊急通報時將會播放警報聲。");
+        document.getElementById('audioNotice').classList.add('hidden');
+      });
+    };
+
+    // 監聽緊急醫療通報
+    onSnapshot(query(collection(db, 'medical'), orderBy('createdAt', 'desc')), (snap) => {
+      const activeContainer = document.getElementById('activeAlerts');
+      const historyContainer = document.getElementById('historyList');
+      
+      let activeHTML = '';
+      let historyHTML = '';
+      let hasEmergency = false;
+
+      snap.forEach(d => {
+        const m = d.data();
+        const time = m.createdAt?.toDate().toLocaleTimeString() || '處理中...';
+
+        if (m.status === 'processing') {
+          hasEmergency = true;
+          activeHTML += `
+            <div class="alert-active p-8 rounded-3xl border-2 flex flex-col md:flex-row justify-between items-center gap-6">
+              <div class="flex items-center gap-6">
+                <div class="bg-red-600 text-white p-5 rounded-full pulse-icon shadow-lg">
+                  <i data-lucide="alert-circle" class="w-10 h-10"></i>
+                </div>
+                <div>
+                  <h3 class="text-3xl font-black text-red-700">緊急求助中</h3>
+                  <p class="text-red-600 font-bold text-lg">${m.room} 房 - ${m.name} (${m.studentId})</p>
+                  <p class="text-red-500/70 text-sm">發出時間：${time}</p>
+                </div>
+              </div>
+              <div class="flex gap-4 w-full md:w-auto">
+                <button onclick="resolveMedical('${d.id}', '已派人前往')" class="flex-1 md:flex-none bg-red-700 text-white px-8 py-4 rounded-2xl font-bold hover:bg-red-800 transition-all shadow-xl shadow-red-900/40">
+                  確認處理
+                </button>
+                <button onclick="resolveMedical('${d.id}', '誤報')" class="flex-1 md:flex-none bg-white/20 text-red-900 px-6 py-4 rounded-2xl font-bold border border-red-200">
+                  誤報排除
+                </button>
+              </div>
+            </div>`;
+        } else {
+          historyHTML += `
+            <tr class="hover:bg-slate-700/30 transition-colors">
+              <td class="p-4 text-slate-500">${time}</td>
+              <td class="p-4"><p class="font-bold">${m.name}</p><p class="text-xs text-slate-500">${m.studentId}</p></td>
+              <td class="p-4 font-mono">${m.room}</td>
+              <td class="p-4"><span class="bg-emerald-500/10 text-emerald-500 px-3 py-1 rounded-full text-xs font-bold border border-emerald-500/20">${m.notes || '完成處置'}</span></td>
+              <td class="p-4 text-slate-500">${m.responseTime || '--'}</td>
+            </tr>`;
+        }
+      });
+
+      activeContainer.innerHTML = activeHTML || '<div class="bg-slate-800/50 p-20 text-center rounded-3xl border border-slate-700 text-slate-500 italic">目前暫無緊急求助訊號，系統持續監視中...</div>';
+      historyContainer.innerHTML = historyHTML || '<tr><td colspan="5" class="p-8 text-center text-slate-600">尚無今日處置紀錄</td></tr>';
+      
+      // 自動警鈴邏輯
+      if (hasEmergency) {
+        alarm.play().catch(() => {}); // 嘗試播放，若被瀏覽器擋下則靜默
+      } else {
+        alarm.pause(); alarm.currentTime = 0;
+      }
+      lucide.createIcons();
+    });
+
+    // 處理通報
+    window.resolveMedical = async (id, note) => {
+      const now = new Date();
+      if(confirm('確認已聯繫校安人員或救護單位？')) {
+        await updateDoc(doc(db, 'medical', id), {
+          status: 'completed',
+          notes: note,
+          responseTime: now.toLocaleTimeString()
+        });
+      }
+    };
+
+    lucide.createIcons();
+  </script>
+</body>
+</html>
