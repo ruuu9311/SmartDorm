@@ -5,17 +5,22 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>維修報修 - 智慧宿舍系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     body { font-family: 'Noto Sans TC', sans-serif; }
     .radio-label {
-      display: flex; align-items: center; gap: 6px;
-      cursor: pointer; font-size: 0.875rem; color: #374151;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      font-size: 0.875rem;
+      color: #374151;
     }
-    .radio-label input[type="radio"] { accent-color: #2563eb; width: 16px; height: 16px; }
+    .radio-label input[type="radio"] {
+      accent-color: #2563eb;
+      width: 16px;
+      height: 16px;
+    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -44,33 +49,33 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // ── 1. 登入狀態檢查 ──────────────────────────────────────────────────────
   const studentId = localStorage.getItem('studentId');
   if (!studentId) {
     window.location.href = './login.html';
     throw new Error('未登入');
   }
+
   const cached = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const name = cached?.name || '使用者';
   const room = cached?.room || '—';
   const sid  = studentId;
 
-  // ── 2. 選項定義 ──────────────────────────────────────────────────────────
   const publicPlaces = [
     '1樓大廳', '1樓交誼廳', '2樓走廊', '2樓交誼廳',
     '1樓公共廁所（男）', '2樓公共廁所（男）', '1樓公共廁所（女）', '2樓公共廁所（女）',
     '洗衣間', '電梯', '其他'
   ];
+
   const thingOptions = {
-    room:   ['燈具', '冷氣', '門鎖', '窗戶', '床架/家具', '桌椅', '網路', '插座'],
+    room: ['燈具', '冷氣', '門鎖', '窗戶', '床架/家具', '桌椅', '網路', '插座'],
     public: ['飲水機', '電梯', '走廊燈', '公共廁所', '公共冷氣', '消防設備', '門禁系統']
   };
+
   const reasonOptions = {
-    room:   ['損壞/破裂', '無法正常運作', '漏水', '沒電/跳電', '異味/異音', '蟲害'],
+    room: ['損壞/破裂', '無法正常運作', '漏水', '沒電/跳電', '異味/異音', '蟲害'],
     public: ['損壞/破裂', '無法正常運作', '漏水', '沒電/跳電', '設備老舊', '安全疑慮']
   };
 
-  // ── 3. Badge 輔助函式 ────────────────────────────────────────────────────
   function getStatusBadge(status) {
     const map = {
       '處理中': '<span class="px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-medium">處理中</span>',
@@ -80,22 +85,14 @@
     };
     return map[status] || `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">${status || '未知'}</span>`;
   }
+
   function getSideBadge(side) {
     if (!side) return '';
     return side.includes('公共')
       ? '<span class="px-2 py-0.5 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">公共區域</span>'
       : '<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">房間內</span>';
   }
-  function getPriorityBadge(priority) {
-    const map = {
-      '高': '<span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">🔴 高</span>',
-      '中': '<span class="px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded-full text-xs font-medium">🟡 中</span>',
-      '低': '<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">⚪ 低</span>'
-    };
-    return map[priority] || '';
-  }
 
-  // ── 4. 讀取本人報修紀錄 ──────────────────────────────────────────────────
   let records = [];
   try {
     const snap = await getDocs(collection(db, 'maintenance'));
@@ -115,14 +112,12 @@
   const processing = records.filter(r => r.status === '處理中').length;
   const completed  = records.filter(r => r.status === '已完成').length;
 
-  // ── 5. 渲染頁面 ──────────────────────────────────────────────────────────
   document.getElementById('page').innerHTML = `
     <div class="flex min-h-screen">
-
-      <!-- 側邊欄 -->
       <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
         <div class="p-6 border-b border-gray-100">
-          <div class="flex items-center gap-3">
+          <a href="./dashboard.html"
+             class="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 hover:bg-blue-50 cursor-pointer transition-colors">
             <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
               <i data-lucide="house" class="w-5 h-5 text-white"></i>
             </div>
@@ -130,7 +125,7 @@
               <p class="font-semibold text-gray-900 text-sm">智慧宿舍系統</p>
               <p class="text-xs text-gray-400">Smart Dorm</p>
             </div>
-          </div>
+          </a>
         </div>
 
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -175,42 +170,82 @@
             </div>
           </div>
           <button id="logoutBtn"
-            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500
-                   hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
             <i data-lucide="log-out" class="w-4 h-4"></i> 登出
           </button>
         </div>
       </aside>
 
-      <!-- 主內容 -->
       <div class="flex-1 flex flex-col ml-64 min-h-screen">
-        <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
-          <h1 class="text-xl font-semibold text-gray-900">維修報修</h1>
-          <p class="text-sm text-gray-400">${room}｜${sid}</p>
+        <header class="bg-gray-50 border-b border-gray-200 px-6 py-5 sticky top-0 z-10">
+          <h1 class="text-xl font-bold text-gray-900">維修報修</h1>
+          <p class="text-lg text-gray-500 mt-1">${room}｜${sid}</p>
         </header>
 
         <main class="p-6 max-w-6xl mx-auto w-full">
-          <div class="mb-8">
-            <div class="flex items-center justify-between flex-wrap gap-3">
-              <div>
-                <h1 class="text-3xl font-semibold text-gray-900 mb-2">維修報修</h1>
-                <p class="text-gray-600">宿舍設備與公共設施報修管理</p>
+
+
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+            <button id="openFormBtn"
+              class="group bg-blue-600 hover:bg-blue-700 active:bg-blue-800 rounded-xl p-5 border border-blue-600 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all text-left h-full w-full">
+              <div class="flex flex-col justify-between h-full">
+                <div class="flex items-start justify-between">
+                  <div class="w-11 h-11 bg-white/20 group-hover:bg-white/30 rounded-xl flex items-center justify-center transition-colors">
+                    <i data-lucide="plus" class="w-5 h-5 text-white"></i>
+                  </div>
+                  <i data-lucide="arrow-up-right" class="w-4 h-4 text-blue-300 group-hover:text-white transition-colors mt-1"></i>
+                </div>
+                <div class="mt-4">
+                  <p class="text-blue-200 text-xs font-medium mb-1">新增報修</p>
+                  <p class="text-white text-xl font-bold">建立案件</p>
+                  <p class="text-blue-200 text-xs mt-2 leading-relaxed">填寫設備或公共區域維修申請</p>
+                </div>
               </div>
-              <button id="openFormBtn"
-                class="px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium">
-                ＋ 新增報修
-              </button>
+            </button>
+
+            <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm h-full">
+              <div class="flex flex-col justify-between h-full">
+                <div>
+                  <p class="text-gray-500 text-sm">處理中</p>
+                  <p class="text-2xl font-bold text-orange-500 mt-1">${processing}
+                    <span class="text-base font-normal text-gray-400">件</span>
+                  </p>
+                </div>
+                <p class="text-xs text-gray-400 mt-4">目前尚在處理流程中的案件</p>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm h-full">
+              <div class="flex flex-col justify-between h-full">
+                <div>
+                  <p class="text-gray-500 text-sm">已完成</p>
+                  <p class="text-2xl font-bold text-green-600 mt-1">${completed}
+                    <span class="text-base font-normal text-gray-400">件</span>
+                  </p>
+                </div>
+                <p class="text-xs text-gray-400 mt-4">已完成修繕與結案的報修紀錄</p>
+              </div>
+            </div>
+
+            <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm h-full">
+              <div class="flex flex-col justify-between h-full">
+                <div>
+                  <p class="text-gray-500 text-sm">總計</p>
+                  <p class="text-2xl font-bold text-gray-700 mt-1">${records.length}
+                    <span class="text-base font-normal text-gray-400">件</span>
+                  </p>
+                </div>
+                <p class="text-xs text-gray-400 mt-4">目前帳號累積送出的全部案件</p>
+              </div>
             </div>
           </div>
 
-          <!-- 新增報修表單 -->
           <div id="formCard" class="hidden bg-white rounded-xl shadow-sm border border-gray-100 mb-8 overflow-hidden">
             <div class="px-6 py-4 border-b border-gray-100">
               <h2 class="text-base font-semibold text-gray-900">維修報修表單</h2>
             </div>
-            <form id="mForm" class="p-6 space-y-5">
 
-              <!-- 報修位置類型 -->
+            <form id="mForm" class="p-6 space-y-5">
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-2">
                   報修位置類型 <span class="text-red-500">*</span>
@@ -225,7 +260,6 @@
                 </div>
               </div>
 
-              <!-- 房間內：房號 + 床號 -->
               <div id="roomFields" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label class="block text-sm font-medium text-gray-700 mb-1">
@@ -249,7 +283,6 @@
                 </div>
               </div>
 
-              <!-- 公共區域：位置下拉 -->
               <div id="publicFields" class="hidden">
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                   公共區域位置 <span class="text-red-500">*</span>
@@ -261,7 +294,6 @@
                 </select>
               </div>
 
-              <!-- 損壞物品 -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                   損壞物品 <span class="text-red-500">*</span>
@@ -272,7 +304,6 @@
                 </select>
               </div>
 
-              <!-- 損壞原因 -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                   損壞原因 <span class="text-red-500">*</span>
@@ -283,24 +314,11 @@
                 </select>
               </div>
 
-              <!-- 詳細說明 -->
               <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">詳細說明</label>
                 <textarea id="mDesc" rows="4"
                   class="w-full px-4 py-3 border border-gray-300 rounded-lg text-sm resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
                   placeholder="請詳細描述問題狀況..."></textarea>
-              </div>
-
-              <!-- 緊急程度 -->
-              <div>
-                <label class="block text-sm font-medium text-gray-700 mb-2">
-                  緊急程度 <span class="text-red-500">*</span>
-                </label>
-                <div class="flex gap-6">
-                  <label class="radio-label"><input type="radio" name="mPriority" value="低"> 低</label>
-                  <label class="radio-label"><input type="radio" name="mPriority" value="中" checked> 中</label>
-                  <label class="radio-label"><input type="radio" name="mPriority" value="高"> 高</label>
-                </div>
               </div>
 
               <div id="mMsg" class="hidden p-3 rounded-lg text-sm"></div>
@@ -318,26 +336,6 @@
             </form>
           </div>
 
-          <!-- 進度卡片 -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-            <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-              <p class="text-gray-500 text-sm">處理中</p>
-              <p class="text-2xl font-bold text-orange-500 mt-1">${processing}
-                <span class="text-base font-normal text-gray-400">件</span></p>
-            </div>
-            <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-              <p class="text-gray-500 text-sm">已完成</p>
-              <p class="text-2xl font-bold text-green-600 mt-1">${completed}
-                <span class="text-base font-normal text-gray-400">件</span></p>
-            </div>
-            <div class="bg-white rounded-xl p-5 border border-gray-100 shadow-sm">
-              <p class="text-gray-500 text-sm">總計</p>
-              <p class="text-2xl font-bold text-gray-700 mt-1">${records.length}
-                <span class="text-base font-normal text-gray-400">件</span></p>
-            </div>
-          </div>
-
-          <!-- 報修卡片列表 -->
           ${records.length > 0 ? `
           <div class="space-y-4 mb-8">
             ${records.map(r => {
@@ -354,7 +352,6 @@
                     <h3 class="text-gray-900 font-semibold">${r.thing || r.item || '—'}</h3>
                     ${getStatusBadge(r.status)}
                     ${getSideBadge(r.side)}
-                    ${getPriorityBadge(r.priority)}
                   </div>
                   <span class="text-gray-400 text-xs whitespace-nowrap ml-4">${timeStr}</span>
                 </div>
@@ -365,7 +362,6 @@
             }).join('')}
           </div>` : ''}
 
-          <!-- 案件總表 -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
             <div class="p-6 border-b border-gray-200">
               <h2 class="text-xl font-semibold text-gray-900">案件總表 (${records.length})</h2>
@@ -378,13 +374,12 @@
                     <th class="text-left py-3 px-4 text-gray-600 font-medium">地點</th>
                     <th class="text-left py-3 px-4 text-gray-600 font-medium">原因</th>
                     <th class="text-left py-3 px-4 text-gray-600 font-medium">區域</th>
-                    <th class="text-left py-3 px-4 text-gray-600 font-medium">緊急</th>
                     <th class="text-left py-3 px-4 text-gray-600 font-medium">狀態</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${records.length === 0
-                    ? '<tr><td colspan="6" class="py-8 text-center text-gray-400">尚無報修紀錄</td></tr>'
+                    ? '<tr><td colspan="5" class="py-8 text-center text-gray-400">尚無報修紀錄</td></tr>'
                     : records.map(r => {
                         const loc = r.side === '公共區域'
                           ? (r.place || '公共區域')
@@ -395,7 +390,6 @@
                           <td class="py-3 px-4 text-gray-600">${loc}</td>
                           <td class="py-3 px-4 text-gray-600 max-w-xs truncate">${r.reason || '—'}</td>
                           <td class="py-3 px-4 text-gray-600">${r.side || '—'}</td>
-                          <td class="py-3 px-4">${getPriorityBadge(r.priority)}</td>
                           <td class="py-3 px-4">${getStatusBadge(r.status)}</td>
                         </tr>`;
                       }).join('')}
@@ -408,7 +402,6 @@
     </div>
   `;
 
-  // ── 6. 登出按鈕 ──────────────────────────────────────────────────────────
   document.getElementById('logoutBtn').addEventListener('click', () => {
     localStorage.clear();
     window.location.href = './login.html';
@@ -416,22 +409,23 @@
 
   lucide.createIcons();
 
-  // ── 7. 填充下拉選項 ──────────────────────────────────────────────────────
   function fillSelects(type) {
-    const thingSel  = document.getElementById('mThing');
+    const thingSel = document.getElementById('mThing');
     const reasonSel = document.getElementById('mReason');
-    thingSel.innerHTML  = '<option value="" disabled selected>請選擇損壞物品</option>' +
+
+    thingSel.innerHTML = '<option value="" disabled selected>請選擇損壞物品</option>' +
       thingOptions[type].map(t => `<option value="${t}">${t}</option>`).join('');
+
     reasonSel.innerHTML = '<option value="" disabled selected>請選擇損壞原因</option>' +
       reasonOptions[type].map(r => `<option value="${r}">${r}</option>`).join('');
   }
+
   fillSelects('room');
 
   document.getElementById('mRoom').required  = true;
   document.getElementById('mBed').required   = true;
   document.getElementById('mPlace').required = false;
 
-  // ── 8. 位置類型切換 ──────────────────────────────────────────────────────
   document.querySelectorAll('input[name="mSide"]').forEach(radio => {
     radio.addEventListener('change', e => {
       const isPublic = e.target.value === '公共區域';
@@ -439,28 +433,26 @@
       document.getElementById('publicFields').classList.toggle('hidden', !isPublic);
       document.getElementById('mRoom').required  = !isPublic;
       document.getElementById('mBed').required   = !isPublic;
-      document.getElementById('mPlace').required =  isPublic;
+      document.getElementById('mPlace').required = isPublic;
       fillSelects(isPublic ? 'public' : 'room');
     });
   });
 
-  // ── 9. 表單開關 ──────────────────────────────────────────────────────────
   document.getElementById('openFormBtn').addEventListener('click', () => {
     document.getElementById('formCard').classList.remove('hidden');
     document.getElementById('formCard').scrollIntoView({ behavior: 'smooth' });
   });
+
   document.getElementById('cancelFormBtn').addEventListener('click', () => {
     document.getElementById('formCard').classList.add('hidden');
     document.getElementById('mMsg').classList.add('hidden');
   });
 
-  // ── 10. 送出報修 ─────────────────────────────────────────────────────────
   document.getElementById('mForm').addEventListener('submit', async e => {
     e.preventDefault();
-    const msg      = document.getElementById('mMsg');
-    const btn      = e.target.querySelector('button[type="submit"]');
-    const side     = document.querySelector('input[name="mSide"]:checked')?.value || '房間內';
-    const pri      = document.querySelector('input[name="mPriority"]:checked')?.value || '中';
+    const msg = document.getElementById('mMsg');
+    const btn = e.target.querySelector('button[type="submit"]');
+    const side = document.querySelector('input[name="mSide"]:checked')?.value || '房間內';
     const isPublic = side === '公共區域';
 
     btn.textContent = '送出中...';
@@ -468,27 +460,29 @@
 
     try {
       await addDoc(collection(db, 'maintenance'), {
-        ID:          sid,
-        studentId:   sid,
+        ID: sid,
+        studentId: sid,
         name,
-        room:        isPublic ? '' : document.getElementById('mRoom').value,
-        bed:         isPublic ? '' : document.getElementById('mBed').value,
-        place:       isPublic ? document.getElementById('mPlace').value : '',
+        room: isPublic ? '' : document.getElementById('mRoom').value,
+        bed: isPublic ? '' : document.getElementById('mBed').value,
+        place: isPublic ? document.getElementById('mPlace').value : '',
         side,
-        thing:       document.getElementById('mThing').value,
-        reason:      document.getElementById('mReason').value,
+        thing: document.getElementById('mThing').value,
+        reason: document.getElementById('mReason').value,
         description: document.getElementById('mDesc').value,
-        priority:    pri,
-        status:      '待處理',
-        time:        serverTimestamp()
+        status: '待處理',
+        time: serverTimestamp()
       });
+
       msg.textContent = '✅ 報修申請已送出！';
       msg.className = 'p-3 rounded-lg text-sm bg-green-50 text-green-700';
       msg.classList.remove('hidden');
+
       e.target.reset();
       document.getElementById('roomFields').classList.remove('hidden');
       document.getElementById('publicFields').classList.add('hidden');
       fillSelects('room');
+
       setTimeout(() => location.reload(), 2000);
     } catch (err) {
       msg.textContent = '❌ 送出失敗：' + err.message;

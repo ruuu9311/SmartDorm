@@ -5,11 +5,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Dashboard - 智慧宿舍系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; }
+  </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
 
@@ -38,21 +37,19 @@
   const firebaseApp = initializeApp(firebaseConfig);
   const db = getFirestore(firebaseApp);
 
-  // 1. 唯一會跳回 login 的地方：一開始沒有 studentId
   const studentId = localStorage.getItem('studentId');
   if (!studentId) {
     window.location.href = './login.html';
-    throw new Error('未登入');
   }
 
-  // 2. 先從 localStorage 快取拿資料（Firebase 之後即時覆蓋）
   const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
   let userData = {
     name: cachedUser?.name || '使用者',
     room: cachedUser?.room || '—',
-    sid:  cachedUser?.studentId || studentId
+    sid: cachedUser?.studentId || studentId
   };
-  let statsData  = { pkgCount: 0, visCount: 0, mntCount: 0 };
+
+  let statsData = { pkgCount: 0, visCount: 0, mntCount: 0 };
   let activities = [];
   let shellBuilt = false;
 
@@ -68,87 +65,132 @@
     });
   }
 
-  // 3. 主內容 HTML
-  function renderContent() {
-    const stats = [
-      { title: '待領包裹', value: statsData.pkgCount, unit: '件', icon: 'package',  color: 'bg-blue-500'   },
-      { title: '訪客申請', value: statsData.visCount, unit: '筆', icon: 'users',    color: 'bg-green-500'  },
-      { title: '維修案件', value: statsData.mntCount, unit: '件', icon: 'wrench',   color: 'bg-orange-500' }
-    ];
-    return `
-      <div class="mb-8">
-        <h2 class="text-3xl font-semibold text-gray-900 mb-1">${userData.name}</h2>
-        <p class="text-gray-500">${userData.room}｜${userData.sid}</p>
-      </div>
+  // 依時間回傳打招呼
+  function getGreeting() {
+    const now = new Date();
+    const hour = now.getHours();
+    if (hour >= 5 && hour < 11) return '早安';
+    if (hour >= 11 && hour < 14) return '中午好';
+    if (hour >= 14 && hour < 18) return '下午好';
+    return '晚安';
+  }
 
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        ${stats.map(s => `
-          <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-            <div class="mb-4">
-              <div class="${s.color} p-3 rounded-lg inline-block">
-                <i data-lucide="${s.icon}" class="w-6 h-6 text-white"></i>
+  function renderContent() {
+    const cards = [
+      {
+        title: '待領包裹',
+        value: statsData.pkgCount,
+        unit: '件',
+        icon: 'package',
+        color: 'bg-blue-500',
+        href: './package.html',
+        desc: '查看目前尚未領取的包裹'
+      },
+      {
+        title: '訪客申請',
+        value: statsData.visCount,
+        unit: '筆',
+        icon: 'users',
+        color: 'bg-green-500',
+        href: './visitor.html',
+        desc: '管理訪客預約與審核狀態'
+      },
+      {
+        title: '維修案件',
+        value: statsData.mntCount,
+        unit: '件',
+        icon: 'wrench',
+        color: 'bg-orange-500',
+        href: './maintenance.html',
+        desc: '查看房間與公共區域報修'
+      },
+      {
+        title: '緊急醫療通報',
+        value: '立即',
+        unit: '',
+        icon: 'heart-pulse',
+        color: 'bg-red-500',
+        href: './medical.html',
+        desc: '身體不適或緊急狀況時，可快速進入醫療通知頁面。'
+      }
+    ];
+
+    return `
+      <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-7 mb-10">
+        ${cards.map(card => `
+          <a href="${card.href}"
+             class="group bg-white rounded-2xl shadow-sm p-6 md:p-7 border border-gray-100 hover:shadow-md hover:-translate-y-0.5 transition-all flex flex-col justify-between min-h-[190px]">
+            <div class="flex items-start justify-between mb-5">
+              <div class="${card.color} p-3.5 rounded-xl inline-flex shadow-sm">
+                <i data-lucide="${card.icon}" class="w-6 h-6 text-white"></i>
+              </div>
+              <i data-lucide="arrow-up-right"
+                 class="w-5 h-5 text-gray-300 group-hover:text-blue-500 transition-colors"></i>
+            </div>
+
+            <div>
+              <h3 class="text-gray-900 text-base font-semibold mb-2">${card.title}</h3>
+              <p class="text-gray-500 text-sm leading-6 mb-4">${card.desc}</p>
+              <div class="flex items-baseline gap-2">
+                <span class="text-2xl md:text-3xl font-bold text-gray-900">${card.value}</span>
+                ${card.unit ? `<span class="text-gray-400 text-sm">${card.unit}</span>` : ''}
               </div>
             </div>
-            <h3 class="text-gray-500 text-sm mb-1">${s.title}</h3>
-            <div class="flex items-baseline gap-2">
-              <span class="text-2xl font-semibold text-gray-900">${s.value}</span>
-              <span class="text-gray-400 text-sm">${s.unit}</span>
-            </div>
-          </div>`).join('')}
+          </a>
+        `).join('')}
       </div>
 
-      <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div class="lg:col-span-2 bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 class="text-lg font-semibold text-gray-900 mb-6">近期活動</h2>
-          ${activities.length === 0
-            ? `<div class="flex flex-col items-center py-10 text-gray-400">
-                 <i data-lucide="bell-off" class="w-8 h-8 mb-3"></i>
-                 <p class="text-sm">尚無近期活動紀錄</p>
-               </div>`
-            : `<div class="space-y-3">
-                 ${activities.map(a => `
-                   <div class="flex items-start gap-4 p-4 rounded-lg hover:bg-gray-50 transition-colors">
-                     <div class="bg-blue-50 text-blue-600 p-2 rounded-lg flex-shrink-0">
-                       <i data-lucide="bell" class="w-4 h-4"></i>
-                     </div>
-                     <div>
-                       <p class="text-gray-900 font-medium text-sm">${a.title || ''}</p>
-                       <p class="text-gray-500 text-xs mt-0.5">${a.description || ''}</p>
-                     </div>
-                   </div>`).join('')}
-               </div>`}
+      <div class="bg-white rounded-2xl shadow-sm p-7 border border-gray-100">
+        <div class="flex items-center justify-between mb-6">
+          <h2 class="text-xl font-semibold text-gray-900">近期活動</h2>
+          <span class="text-xs text-gray-400">Latest</span>
         </div>
 
-        <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100">
-          <h2 class="text-lg font-semibold text-gray-900 mb-4">快捷入口</h2>
-          <div class="space-y-2">
-            ${[
-              ['./room-control.html', '🏠', '房間控制'],
-              ['./energy.html',       '⚡', '能源監控'],
-              ['./package.html',      '📦', '包裹管理'],
-              ['./maintenance.html',  '🔧', '維修報修'],
-              ['./visitor.html',      '👤', '訪客管理'],
-              ['./medical.html',      '🏥', '緊急通知']
-            ].map(([href, emoji, label]) => `
-              <a href="${href}"
-                class="flex items-center gap-3 px-4 py-3 rounded-lg border border-gray-200
-                       hover:border-blue-500 hover:bg-blue-50 text-gray-700 text-sm transition-colors">
-                <span>${emoji}</span><span>${label}</span>
-                <i data-lucide="chevron-right" class="w-4 h-4 ml-auto text-gray-400"></i>
-              </a>`).join('')}
-          </div>
-        </div>
+        ${activities.length === 0
+          ? `<div class="flex flex-col items-center py-12 text-gray-400">
+               <i data-lucide="bell-off" class="w-9 h-9 mb-3"></i>
+               <p class="text-sm">尚無近期活動紀錄</p>
+             </div>`
+          : `<div class="space-y-3">
+               ${activities.map(a => `
+                 <div class="flex items-start gap-4 p-4 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors">
+                   <div class="bg-blue-50 text-blue-600 p-2.5 rounded-lg flex-shrink-0">
+                     <i data-lucide="bell" class="w-4 h-4"></i>
+                   </div>
+                   <div>
+                     <p class="text-gray-900 font-medium text-sm">${a.title || ''}</p>
+                     <p class="text-gray-500 text-sm mt-1 leading-6">${a.description || ''}</p>
+                   </div>
+                 </div>
+               `).join('')}
+             </div>`
+        }
       </div>`;
   }
 
-  // 4. 建立整頁 Shell（只建一次）
+  // 渲染 Header 內容的函數
+  function renderHeader() {
+    const greet = getGreeting();
+    return `
+      <div class="flex flex-col gap-1">
+        <h1 class="text-2xl md:text-3xl font-bold tracking-tight text-gray-900">
+          ${greet}，${userData.name}
+        </h1>
+        <p class="text-sm md:text-base text-gray-400">
+          房間號碼：${userData.room}｜學號：${userData.sid}
+        </p>
+      </div>
+    `;
+  }
+
   function renderShell() {
     shellBuilt = true;
     document.getElementById('page').innerHTML = `
       <div class="flex min-h-screen">
         <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
           <div class="p-6 border-b border-gray-100">
-            <div class="flex items-center gap-3">
+            <a href="./dashboard.html"
+               class="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 hover:bg-blue-50 cursor-pointer transition-colors">
               <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
                 <i data-lucide="house" class="w-5 h-5 text-white"></i>
               </div>
@@ -156,7 +198,7 @@
                 <p class="font-semibold text-gray-900 text-sm">智慧宿舍系統</p>
                 <p class="text-xs text-gray-400">Smart Dorm</p>
               </div>
-            </div>
+            </a>
           </div>
 
           <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -201,19 +243,18 @@
               </div>
             </div>
             <button id="logoutBtn"
-              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500
-                     hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
               <i data-lucide="log-out" class="w-4 h-4"></i> 登出
             </button>
           </div>
         </aside>
 
         <div class="flex-1 flex flex-col ml-64 min-h-screen">
-          <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
-            <h1 class="text-xl font-semibold text-gray-900">首頁 Dashboard</h1>
-            <p id="header-sub" class="text-sm text-gray-400">${userData.room}｜${userData.sid}</p>
+          <header id="dynamic-header" class="bg-gray-50 border-b border-gray-200 px-8 py-6 sticky top-0 z-10">
+            ${renderHeader()}
           </header>
-          <main id="main-content" class="p-6 max-w-7xl mx-auto w-full">
+
+          <main id="main-content" class="p-8 max-w-[1500px] mx-auto w-full">
             ${renderContent()}
           </main>
         </div>
@@ -222,65 +263,52 @@
     bindLogout();
   }
 
-  // 5. 只更新主內容（不重建 Sidebar，避免閃爍）
   function updateContent() {
-    if (!shellBuilt) { renderShell(); return; }
+    if (!shellBuilt) {
+      renderShell();
+      return;
+    }
+
+    const headerEl = document.getElementById('dynamic-header');
+    if (headerEl) headerEl.innerHTML = renderHeader();
+
     const mainEl = document.getElementById('main-content');
     if (mainEl) mainEl.innerHTML = renderContent();
+
     const nameEl = document.getElementById('sidebar-name');
     const roomEl = document.getElementById('sidebar-room');
-    const subEl  = document.getElementById('header-sub');
+
     if (nameEl) nameEl.textContent = userData.name;
     if (roomEl) roomEl.textContent = userData.room;
-    if (subEl)  subEl.textContent  = `${userData.room}｜${userData.sid}`;
+
     initIcons();
   }
 
-  // 6. 初始化：先畫 Shell
   renderShell();
 
-  // 7. 自動備援：onSnapshot 失敗時改用一次性讀取，不會跳回登入
   function tryOnSnapshot(ref, onData, colName) {
     const unsub = onSnapshot(ref, onData, (err) => {
-      console.warn(`[${colName}] onSnapshot 失敗，改用一次性讀取:`, err.code);
+      console.warn(`[${colName}] 監聽失敗:`, err.code);
       unsub();
-      if (colName === 'users') {
-        getDoc(ref).then(onData).catch(e => console.error(`[${colName}] getDoc 失敗:`, e));
-      } else {
-        getDocs(ref).then(onData).catch(e => console.error(`[${colName}] getDocs 失敗:`, e));
-      }
     });
   }
 
-  // 8. 監聽 users/{studentId}
   tryOnSnapshot(
     doc(db, 'users', studentId),
     (snap) => {
-      if (!snap.exists()) {
-        // 文件不存在也不跳回登入，繼續顯示快取資料
-        console.warn('[users] 文件不存在，使用快取資料');
-        return;
-      }
+      if (!snap.exists()) return;
       const d = snap.data();
       userData = {
-        name: d.name      || cachedUser?.name || '使用者',
-        room: d.room      || cachedUser?.room || '—',
-        sid:  d.studentId || studentId
+        name: d.name || cachedUser?.name || '使用者',
+        room: d.room || cachedUser?.room || '—',
+        sid: d.studentId || studentId
       };
-      localStorage.setItem('currentUser', JSON.stringify({
-        id:        studentId,
-        studentId: d.studentId || studentId,
-        name:      d.name  || '',
-        room:      d.room  || '',
-        bed:       d.bed   || '',
-        class:     d.class || ''
-      }));
+      localStorage.setItem('currentUser', JSON.stringify({ ...d, id: studentId }));
       updateContent();
     },
     'users'
   );
 
-  // 9. 監聽 packages
   tryOnSnapshot(
     collection(db, 'packages'),
     (snap) => {
@@ -290,31 +318,24 @@
     'packages'
   );
 
-  // 10. 監聽 visitor
   tryOnSnapshot(
     collection(db, 'visitor'),
     (snap) => {
-      statsData.visCount = snap.docs.filter(d =>
-        ['pending', 'approved'].includes(d.data().status)
-      ).length;
+      statsData.visCount = snap.docs.filter(d => ['pending', 'approved'].includes(d.data().status)).length;
       updateContent();
     },
     'visitor'
   );
 
-  // 11. 監聽 maintenance
   tryOnSnapshot(
     collection(db, 'maintenance'),
     (snap) => {
-      statsData.mntCount = snap.docs.filter(d =>
-        d.data().status === 'processing'
-      ).length;
+      statsData.mntCount = snap.docs.filter(d => d.data().status === 'processing' || d.data().status === '處理中').length;
       updateContent();
     },
     'maintenance'
   );
 
-  // 12. 監聽 activities
   tryOnSnapshot(
     collection(db, 'activities'),
     (snap) => {

@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>包裹管理 - 智慧宿舍系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
 </head>
@@ -35,28 +32,26 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // ── 1. 登入狀態檢查 ──────────────────────────────────────────────────────
   const studentId = localStorage.getItem('studentId');
   if (!studentId) {
     window.location.href = './login.html';
     throw new Error('未登入');
   }
+
   const cached = JSON.parse(localStorage.getItem('currentUser') || 'null');
   const name = cached?.name || '使用者';
   const room = cached?.room || '—';
   const sid  = studentId;
 
-  // ── 2. 狀態標籤輔助函式 ──────────────────────────────────────────────────
   function getStatusBadge(status) {
     const map = {
-      waiting: '<span class="px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">待領取</span>',
-      picked:  '<span class="px-2 py-0.5 bg-green-100 text-green-700 rounded-full text-xs font-medium">已領取</span>',
-      expired: '<span class="px-2 py-0.5 bg-red-100 text-red-700 rounded-full text-xs font-medium">已逾期</span>'
+      waiting: '<span class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">待領取</span>',
+      picked:  '<span class="inline-flex items-center px-2.5 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">已領取</span>',
+      expired: '<span class="inline-flex items-center px-2.5 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">已逾期</span>'
     };
-    return map[status] || `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">${status || '未知'}</span>`;
+    return map[status] || `<span class="inline-flex items-center px-2.5 py-1 bg-gray-100 text-gray-600 rounded-full text-xs font-medium">${status || '未知'}</span>`;
   }
 
-  // ── 3. 讀取包裹資料 ──────────────────────────────────────────────────────
   let packages = [];
   try {
     const snap = await getDocs(collection(db, 'packages'));
@@ -68,14 +63,12 @@
   const waiting = packages.filter(p => p.status === 'waiting');
   const picked  = packages.filter(p => p.status === 'picked');
 
-  // ── 4. 渲染頁面 ──────────────────────────────────────────────────────────
   document.getElementById('page').innerHTML = `
     <div class="flex min-h-screen">
-
-      <!-- 側邊欄 -->
       <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
         <div class="p-6 border-b border-gray-100">
-          <div class="flex items-center gap-3">
+          <a href="./dashboard.html"
+             class="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 hover:bg-blue-50 cursor-pointer transition-colors">
             <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
               <i data-lucide="house" class="w-5 h-5 text-white"></i>
             </div>
@@ -83,7 +76,7 @@
               <p class="font-semibold text-gray-900 text-sm">智慧宿舍系統</p>
               <p class="text-xs text-gray-400">Smart Dorm</p>
             </div>
-          </div>
+          </a>
         </div>
 
         <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
@@ -128,32 +121,60 @@
             </div>
           </div>
           <button id="logoutBtn"
-            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500
-                   hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
+            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
             <i data-lucide="log-out" class="w-4 h-4"></i> 登出
           </button>
         </div>
       </aside>
 
-      <!-- 主內容 -->
       <div class="flex-1 flex flex-col ml-64 min-h-screen">
-        <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
-          <h1 class="text-xl font-semibold text-gray-900">包裹管理</h1>
-          <p class="text-sm text-gray-400">${room}｜${sid}</p>
+        <header class="bg-gray-50 border-b border-gray-200 px-6 py-5 sticky top-0 z-10">
+          <h1 class="text-xl font-bold text-gray-900">包裹管理</h1>
+          <p class="text-lg text-gray-500 mt-1">${room}｜${sid}</p>
         </header>
 
-        <main class="p-6 max-w-6xl mx-auto w-full">
-          <div class="mb-8">
-            <h1 class="text-3xl font-semibold text-gray-900 mb-2">包裹管理</h1>
-            <p class="text-gray-600">宿舍包裹收件與領取紀錄</p>
+        <main class="p-6">
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-8">
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <i data-lucide="package" class="w-5 h-5 text-blue-600"></i>
+                </div>
+                <span class="text-xs font-medium text-blue-600">待處理</span>
+              </div>
+              <p class="text-gray-500 text-sm mb-1">待領取包裹</p>
+              <p class="text-2xl font-bold text-gray-900">${waiting.length} <span class="text-sm font-normal text-gray-400">件</span></p>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center">
+                  <i data-lucide="package-check" class="w-5 h-5 text-green-600"></i>
+                </div>
+                <span class="text-xs font-medium text-green-600">已完成</span>
+              </div>
+              <p class="text-gray-500 text-sm mb-1">已領取包裹</p>
+              <p class="text-2xl font-bold text-gray-900">${picked.length} <span class="text-sm font-normal text-gray-400">件</span></p>
+            </div>
+
+            <div class="bg-white rounded-xl border border-gray-100 shadow-sm p-5">
+              <div class="flex items-start justify-between mb-3">
+                <div class="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center">
+                  <i data-lucide="boxes" class="w-5 h-5 text-gray-600"></i>
+                </div>
+                <span class="text-xs font-medium text-gray-500">累計</span>
+              </div>
+              <p class="text-gray-500 text-sm mb-1">包裹總數</p>
+              <p class="text-2xl font-bold text-gray-900">${packages.length} <span class="text-sm font-normal text-gray-400">件</span></p>
+            </div>
           </div>
 
-          <!-- 待領取 -->
           <div class="mb-8">
-            <h2 class="text-lg font-semibold text-gray-900 mb-4">
-              待領取
-              <span class="ml-2 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">${waiting.length}</span>
-            </h2>
+            <div class="flex items-center justify-between mb-4">
+              <h2 class="text-base font-semibold text-gray-900">待領取包裹</h2>
+              <span class="inline-flex items-center px-2.5 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">${waiting.length} 件</span>
+            </div>
+
             ${waiting.length === 0
               ? `<div class="bg-white rounded-xl p-8 text-center border border-dashed border-gray-300 text-gray-400 text-sm">
                    目前沒有待領取的包裹
@@ -161,49 +182,62 @@
               : `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                    ${waiting.map(pkg => `
                      <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow">
-                       <div class="flex items-center justify-between mb-3">
-                         <h3 class="text-gray-900 font-semibold">${pkg.trackingNumber || '—'}</h3>
+                       <div class="flex items-start justify-between gap-4 mb-4">
+                         <div>
+                           <h3 class="text-gray-900 font-semibold">${pkg.trackingNumber || '—'}</h3>
+                           <p class="text-xs text-gray-400 mt-1">包裹單號</p>
+                         </div>
                          ${getStatusBadge(pkg.status)}
                        </div>
-                       <div class="text-gray-600 text-sm space-y-1">
-                         ${pkg.courier         ? `<p>📦 物流：${pkg.courier}</p>` : ''}
-                         ${pkg.storageLocation ? `<p>📍 存放位置：${pkg.storageLocation}</p>` : ''}
-                         ${pkg.arrivalDate     ? `<p>🕐 到達：${pkg.arrivalDate} ${pkg.arrivalTime || ''}</p>` : ''}
+
+                       <div class="space-y-2 text-sm text-gray-600">
+                         <div class="flex items-center gap-2">
+                           <i data-lucide="truck" class="w-4 h-4 text-gray-400"></i>
+                           <span>物流：${pkg.courier || '—'}</span>
+                         </div>
+                         <div class="flex items-center gap-2">
+                           <i data-lucide="map-pin" class="w-4 h-4 text-gray-400"></i>
+                           <span>存放位置：${pkg.storageLocation || '—'}</span>
+                         </div>
+                         <div class="flex items-center gap-2">
+                           <i data-lucide="clock-3" class="w-4 h-4 text-gray-400"></i>
+                           <span>到達時間：${pkg.arrivalDate || '—'} ${pkg.arrivalTime || ''}</span>
+                         </div>
                        </div>
-                     </div>`).join('')}
+                     </div>
+                   `).join('')}
                  </div>`}
           </div>
 
-          <!-- 已領取紀錄 -->
           <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-            <div class="p-6 border-b border-gray-200">
-              <h2 class="text-xl font-semibold text-gray-900">
-                已領取紀錄
-                <span class="ml-2 text-gray-400 text-base font-normal">(${picked.length})</span>
-              </h2>
+            <div class="px-5 py-3.5 border-b border-gray-100 flex items-center gap-2">
+              <i data-lucide="history" class="w-4 h-4 text-gray-400"></i>
+              <h2 class="text-sm font-semibold text-gray-900">已領取紀錄</h2>
             </div>
+
             <div class="overflow-x-auto">
               <table class="w-full text-sm">
-                <thead class="bg-gray-50">
-                  <tr>
-                    <th class="text-left py-3 px-4 text-gray-600 font-medium">單號</th>
-                    <th class="text-left py-3 px-4 text-gray-600 font-medium">物流商</th>
-                    <th class="text-left py-3 px-4 text-gray-600 font-medium">存放位置</th>
-                    <th class="text-left py-3 px-4 text-gray-600 font-medium">領取時間</th>
-                    <th class="text-left py-3 px-4 text-gray-600 font-medium">狀態</th>
+                <thead>
+                  <tr class="border-b border-gray-100">
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">單號</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">物流商</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">存放位置</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">領取時間</th>
+                    <th class="text-left py-3 px-4 text-gray-400 font-medium text-xs">狀態</th>
                   </tr>
                 </thead>
                 <tbody>
                   ${picked.length === 0
-                    ? '<tr><td colspan="5" class="py-8 text-center text-gray-400">尚無已領取紀錄</td></tr>'
+                    ? '<tr><td colspan="5" class="py-10 text-center text-gray-400 text-sm">尚無已領取紀錄</td></tr>'
                     : picked.map(pkg => `
-                      <tr class="border-b border-gray-100 hover:bg-gray-50">
-                        <td class="py-3 px-4 font-medium">${pkg.trackingNumber || '—'}</td>
+                      <tr class="border-b border-gray-50 hover:bg-gray-50 transition-colors">
+                        <td class="py-3 px-4 font-medium text-gray-900">${pkg.trackingNumber || '—'}</td>
                         <td class="py-3 px-4 text-gray-600">${pkg.courier || '—'}</td>
                         <td class="py-3 px-4 text-gray-600">${pkg.storageLocation || '—'}</td>
                         <td class="py-3 px-4 text-gray-600">${pkg.pickupDate || '—'} ${pkg.pickupTime || ''}</td>
                         <td class="py-3 px-4">${getStatusBadge(pkg.status)}</td>
-                      </tr>`).join('')}
+                      </tr>
+                    `).join('')}
                 </tbody>
               </table>
             </div>
@@ -213,7 +247,6 @@
     </div>
   `;
 
-  // ── 5. 登出按鈕 ──────────────────────────────────────────────────────────
   document.getElementById('logoutBtn').addEventListener('click', () => {
     localStorage.clear();
     window.location.href = './login.html';

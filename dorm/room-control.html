@@ -1,28 +1,13 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>房間控制 - 智慧宿舍系統</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     body { font-family: 'Noto Sans TC', sans-serif; }
-    .switch-btn {
-      position: relative; display: inline-flex; align-items: center;
-      width: 56px; height: 28px; border-radius: 9999px;
-      border: none; cursor: pointer; transition: background 0.3s;
-      flex-shrink: 0;
-    }
-    .switch-dot {
-      position: absolute; left: 2px;
-      width: 24px; height: 24px; border-radius: 9999px;
-      background: white; transition: transform 0.3s;
-      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-    }
   </style>
 </head>
 <body class="bg-gray-50 text-gray-900">
@@ -37,7 +22,11 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
   import {
-    getFirestore, doc, onSnapshot, updateDoc, setDoc, serverTimestamp
+    getFirestore,
+    doc,
+    getDoc,
+    setDoc,
+    onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -48,236 +37,358 @@
     messagingSenderId: "240227925869",
     appId: "1:240227925869:web:5a71f95a2f18bef1972464"
   };
+
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // ── 1. 登入狀態檢查 ──────────────────────────────────────────────────────
   const studentId = localStorage.getItem('studentId');
   if (!studentId) {
     window.location.href = './login.html';
     throw new Error('未登入');
   }
-  const cached = JSON.parse(localStorage.getItem('currentUser') || 'null');
-  const name = cached?.name || '使用者';
-  const room = cached?.room || 'room-default';
-  const sid  = studentId;
 
-  // ── 2. 情境模式定義 ──────────────────────────────────────────────────────
-  const roomScenes = [
-    { id: 'morning', name: '早晨模式', icon: 'sun',       description: '開燈、上鎖，清爽迎接早晨' },
-    { id: 'sleep',   name: '睡眠模式', icon: 'moon',      description: '關燈、上鎖、開冷氣，好眠' },
-    { id: 'study',   name: '讀書模式', icon: 'book-open', description: '開燈、上鎖、開冷氣，專心學習' },
-    { id: 'relax',   name: '放鬆模式', icon: 'sofa',      description: '開燈、解鎖、開電扇，輕鬆休息' }
-  ];
-  const sceneMap = {
-    morning: { light: true,  doorLock: true,  ac: false, fan: false },
-    sleep:   { light: false, doorLock: true,  ac: true,  fan: false },
-    study:   { light: true,  doorLock: true,  ac: true,  fan: false },
-    relax:   { light: true,  doorLock: false, ac: false, fan: true  }
+  const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+  let userData = {
+    name: cachedUser?.name || '使用者',
+    room: cachedUser?.room || '—',
+    sid:  cachedUser?.studentId || studentId
   };
 
-  // ── 3. 設備狀態（全域，供 toggleDev / applyScene 使用）──────────────────
-  const appState = {
-    roomDevices: { light: false, doorLock: true, ac: false, fan: false }
+  let shellBuilt = false;
+
+  const defaultControl = {
+    light: false,
+    door: true,
+    ac:   true,
+    fan:  false
   };
 
-  // ── 4. 渲染頁面 ──────────────────────────────────────────────────────────
-  document.getElementById('page').innerHTML = `
-    <div class="flex min-h-screen">
+  let controlState = { ...defaultControl };
 
-      <!-- 側邊欄 -->
-      <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
-        <div class="p-6 border-b border-gray-100">
-          <div class="flex items-center gap-3">
-            <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-              <i data-lucide="house" class="w-5 h-5 text-white"></i>
-            </div>
-            <div>
-              <p class="font-semibold text-gray-900 text-sm">智慧宿舍系統</p>
-              <p class="text-xs text-gray-400">Smart Dorm</p>
-            </div>
-          </div>
-        </div>
+  const scenes = {
+    morning: {
+      name: '早晨模式',
+      desc: '開燈、上鎖，清爽迎接早晨',
+      icon: 'sun',
+      iconWrap: 'bg-blue-50 text-blue-600',
+      state: { light: true, door: true, ac: false, fan: false }
+    },
+    sleep: {
+      name: '睡眠模式',
+      desc: '關燈、上鎖、關冷氣，好眠',
+      icon: 'moon',
+      iconWrap: 'bg-blue-50 text-blue-600',
+      state: { light: false, door: true, ac: false, fan: false }
+    },
+    study: {
+      name: '讀書模式',
+      desc: '開燈、上鎖、開冷氣，專心學習',
+      icon: 'book-open',
+      iconWrap: 'bg-blue-50 text-blue-600',
+      state: { light: true, door: true, ac: true, fan: false }
+    },
+    relax: {
+      name: '放鬆模式',
+      desc: '開燈、解鎖、開風扇，輕鬆休息',
+      icon: 'sofa',
+      iconWrap: 'bg-blue-50 text-blue-600',
+      state: { light: true, door: false, ac: false, fan: true }
+    }
+  };
 
-        <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-          <a href="./dashboard.html"
-             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-            <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 首頁 Dashboard
-          </a>
-          <a href="./room-control.html"
-             class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-medium">
-            <i data-lucide="home" class="w-4 h-4"></i> 房間控制
-          </a>
-          <a href="./energy.html"
-             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-            <i data-lucide="zap" class="w-4 h-4"></i> 能源監控
-          </a>
-          <a href="./package.html"
-             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-            <i data-lucide="package" class="w-4 h-4"></i> 包裹管理
-          </a>
-          <a href="./maintenance.html"
-             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-            <i data-lucide="wrench" class="w-4 h-4"></i> 維修報修
-          </a>
-          <a href="./visitor.html"
-             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-            <i data-lucide="users" class="w-4 h-4"></i> 訪客管理
-          </a>
-          <a href="./medical.html"
-             class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-            <i data-lucide="heart-pulse" class="w-4 h-4"></i> 緊急通知
-          </a>
-        </nav>
+  function initIcons() {
+    if (window.lucide) window.lucide.createIcons();
+  }
 
-        <div class="p-4 border-t border-gray-100">
-          <div class="flex items-center gap-3 mb-3">
-            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-              <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
-            </div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm font-medium text-gray-900 truncate">${name}</p>
-              <p class="text-xs text-gray-400 truncate">${room}</p>
-            </div>
-          </div>
-          <button id="logoutBtn"
-            class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500
-                   hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
-            <i data-lucide="log-out" class="w-4 h-4"></i> 登出
-          </button>
-        </div>
-      </aside>
-
-      <!-- 主內容 -->
-      <div class="flex-1 flex flex-col ml-64 min-h-screen">
-        <header class="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-10">
-          <h1 class="text-xl font-semibold text-gray-900">房間控制</h1>
-          <p class="text-sm text-gray-400">${room}｜${sid}</p>
-        </header>
-
-        <main class="p-6 max-w-6xl mx-auto w-full">
-          <div class="mb-8">
-            <h1 class="text-3xl font-semibold text-gray-900 mb-2">房間控制</h1>
-            <p class="text-gray-600">${room} 設備控制面板</p>
-          </div>
-
-          <!-- 情境模式 -->
-          <div class="mb-8">
-            <h2 class="text-xl font-semibold text-gray-900 mb-4">情境模式</h2>
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              ${roomScenes.map(scene => `
-                <button onclick="applyScene('${scene.id}')"
-                  class="bg-white border-2 border-gray-200 hover:border-blue-500 hover:bg-blue-50 rounded-xl p-6 text-left transition-all">
-                  <div class="flex items-center gap-3 mb-3">
-                    <div class="p-3 bg-blue-50 rounded-lg">
-                      <i data-lucide="${scene.icon}" class="w-6 h-6 text-blue-600"></i>
-                    </div>
-                    <h3 class="text-gray-900 font-medium">${scene.name}</h3>
-                  </div>
-                  <p class="text-gray-600 text-sm">${scene.description}</p>
-                </button>
-              `).join('')}
-            </div>
-          </div>
-
-          <!-- 設備開關 -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-            ${[
-              { key: 'light',    label: '電燈',   icon: 'lightbulb' },
-              { key: 'doorLock', label: '門鎖',   icon: 'lock'      },
-              { key: 'ac',       label: '冷氣',   icon: 'wind'      },
-              { key: 'fan',      label: '電風扇', icon: 'fan'       }
-            ].map(d => `
-              <div class="bg-white rounded-xl shadow-sm p-6 border border-gray-100 flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <i data-lucide="${d.icon}" class="w-6 h-6 text-gray-500"></i>
-                  <div>
-                    <h3 class="text-gray-900 font-medium">${d.label}</h3>
-                    <p id="label-${d.key}" class="text-gray-500 text-sm">讀取中...</p>
-                  </div>
-                </div>
-                <button id="sw-${d.key}" onclick="toggleDev('${d.key}')"
-                  class="switch-btn" style="background:#D1D5DB">
-                  <span class="switch-dot"></span>
-                </button>
-              </div>`).join('')}
-          </div>
-
-          <!-- Firebase 同步狀態 -->
-          <div id="syncStatus" class="p-4 bg-blue-50 text-blue-700 rounded-xl text-sm flex items-center gap-2">
-            <i data-lucide="loader" class="w-4 h-4"></i> 正在連接 Firebase...
-          </div>
-        </main>
-      </div>
-    </div>
-  `;
-
-  // ── 5. 登出按鈕 ──────────────────────────────────────────────────────────
-  document.getElementById('logoutBtn').addEventListener('click', () => {
-    localStorage.clear();
-    window.location.href = './login.html';
-  });
-
-  lucide.createIcons();
-
-  // ── 6. 顏色 / 文字對應 ───────────────────────────────────────────────────
-  const onColors = { light: '#FBBF24', doorLock: '#3B82F6', ac: '#06B6D4', fan: '#0EA5E9' };
-  const offLabel = { light: '已關閉', doorLock: '未上鎖', ac: '已關閉', fan: '已關閉' };
-  const onLabel  = { light: '開啟中', doorLock: '已上鎖', ac: '運轉中', fan: '運轉中' };
-
-  function renderSwitches(devices) {
-    Object.keys(devices).forEach(key => {
-      const btn = document.getElementById('sw-' + key);
-      const lbl = document.getElementById('label-' + key);
-      if (!btn || !lbl) return;
-      const on = devices[key];
-      btn.style.background = on ? onColors[key] : '#D1D5DB';
-      btn.querySelector('.switch-dot').style.transform = on ? 'translateX(28px)' : 'translateX(0)';
-      lbl.textContent = on ? onLabel[key] : offLabel[key];
+  function bindLogout() {
+    document.getElementById('logoutBtn')?.addEventListener('click', () => {
+      localStorage.removeItem('studentId');
+      localStorage.removeItem('currentUser');
+      window.location.href = './login.html';
     });
   }
 
-  // ── 7. Firebase 即時監聽房間狀態 ─────────────────────────────────────────
-  const roomRef = doc(db, 'rooms', room);
-
-  onSnapshot(roomRef, snap => {
-    const el = document.getElementById('syncStatus');
-    if (!el) return;
-    if (snap.exists()) {
-      const d = snap.data();
-      appState.roomDevices = {
-        light:    d.light    ?? false,
-        doorLock: d.doorLock ?? true,
-        ac:       d.ac       ?? false,
-        fan:      d.fan      ?? false
-      };
-      renderSwitches(appState.roomDevices);
-      el.innerHTML = '<i data-lucide="check-circle" class="w-4 h-4"></i> Firebase 已連接，設備狀態即時同步。';
-      el.className = 'p-4 bg-green-50 text-green-700 rounded-xl text-sm flex items-center gap-2';
-    } else {
-      el.innerHTML = '<i data-lucide="info" class="w-4 h-4"></i> 此房間尚無文件，初次操作後自動建立。';
-      el.className = 'p-4 bg-yellow-50 text-yellow-700 rounded-xl text-sm flex items-center gap-2';
-    }
-    lucide.createIcons();
-  }, err => {
-    const el = document.getElementById('syncStatus');
-    if (el) {
-      el.innerHTML = '❌ 連線失敗：' + err.message;
-      el.className = 'p-4 bg-red-50 text-red-700 rounded-xl text-sm';
-    }
-  });
-
-  // ── 8. 寫入 Firebase（updateDoc 失敗時用 setDoc 自動建立文件）────────────
-  async function writeRoom(state) {
-    try {
-      await updateDoc(roomRef, { ...state, updatedAt: serverTimestamp() });
-    } catch (_) {
-      await setDoc(roomRef, { ...state, updatedAt: serverTimestamp() });
-    }
+  function switchClass(isOn, activeColor = 'bg-cyan-500') {
+    return `
+      relative inline-flex h-7 w-12 items-center rounded-full transition-colors
+      ${isOn ? activeColor : 'bg-gray-300'}
+    `;
   }
 
-  window.toggleDev  = key => writeRoom({ ...appState.roomDevices, [key]: !appState.roomDevices[key] });
-  window.applyScene = id  => { if (sceneMap[id]) writeRoom(sceneMap[id]); };
+  function knobClass(isOn) {
+    return `
+      inline-block h-5 w-5 transform rounded-full bg-white transition
+      ${isOn ? 'translate-x-6' : 'translate-x-1'}
+    `;
+  }
+
+  function deviceStatusLabel(key, value) {
+    if (key === 'door') return value ? '已上鎖' : '已解鎖';
+    if (key === 'ac')   return value ? '運轉中' : '已關閉';
+    if (key === 'fan')  return value ? '運轉中' : '已關閉';
+    return value ? '已開啟' : '已關閉';
+  }
+
+  function renderMainContent() {
+    const deviceCards = [
+      { key: 'light', title: '電燈',   icon: 'lightbulb', activeColor: 'bg-cyan-500' },
+      { key: 'door',  title: '門鎖',   icon: 'lock',      activeColor: 'bg-blue-500' },
+      { key: 'ac',    title: '冷氣',   icon: 'wind',      activeColor: 'bg-cyan-500' },
+      { key: 'fan',   title: '電風扇', icon: 'fan',       activeColor: 'bg-cyan-500' }
+    ];
+
+    return `
+      <section class="mb-10">
+        <div class="flex items-center justify-between mb-5">
+          <h3 class="text-2xl font-bold text-gray-900">情境模式</h3>
+        </div>
+        <p class="text-sm text-gray-500 mb-4">
+          可快速套用預先設定好的房間狀態，一鍵完成燈光、門鎖、冷氣與風扇的調整。
+        </p>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+          ${Object.entries(scenes).map(([sceneKey, scene]) => `
+            <button
+              type="button"
+              data-scene="${sceneKey}"
+              class="scene-btn text-left bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:-translate-y-0.5 transition-all">
+              <div class="flex items-start gap-4">
+                <div class="w-12 h-12 rounded-xl ${scene.iconWrap} flex items-center justify-center shrink-0">
+                  <i data-lucide="${scene.icon}" class="w-6 h-6"></i>
+                </div>
+                <div>
+                  <h4 class="text-lg font-semibold text-gray-900 mb-2">${scene.name}</h4>
+                  <p class="text-sm leading-6 text-gray-500">${scene.desc}</p>
+                </div>
+              </div>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+
+      <section class="mb-8">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-2xl font-bold text-gray-900">設備控制</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          ${deviceCards.map(device => `
+            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
+              <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                  <div class="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600">
+                    <i data-lucide="${device.icon}" class="w-5 h-5"></i>
+                  </div>
+                  <div>
+                    <h4 class="text-lg font-semibold text-gray-900">${device.title}</h4>
+                    <p class="text-sm text-gray-500">${deviceStatusLabel(device.key, controlState[device.key])}</p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  data-device="${device.key}"
+                  class="${switchClass(controlState[device.key], device.activeColor)}">
+                  <span class="${knobClass(controlState[device.key])}"></span>
+                </button>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </section>
+
+      <div class="rounded-2xl border border-green-100 bg-green-50 px-5 py-4 text-green-700 text-sm">
+        <div class="flex items-center gap-2">
+          <i data-lucide="circle-check-big" class="w-4 h-4"></i>
+          <span>Firebase 已連接，設備狀態即時同步。</span>
+        </div>
+      </div>
+    `;
+  }
+
+  function renderShell() {
+    shellBuilt = true;
+    document.getElementById('page').innerHTML = `
+      <div class="flex min-h-screen">
+        <!-- 側邊欄 -->
+        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
+          <div class="p-6 border-b border-gray-100">
+            <a href="./dashboard.html"
+               class="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 hover:bg-blue-50 cursor-pointer transition-colors">
+              <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                <i data-lucide="house" class="w-5 h-5 text-white"></i>
+              </div>
+              <div>
+                <p class="font-semibold text-gray-900 text-sm">智慧宿舍系統</p>
+                <p class="text-xs text-gray-400">Smart Dorm</p>
+              </div>
+            </a>
+          </div>
+
+          <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+            <a href="./dashboard.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 首頁 Dashboard
+            </a>
+            <a href="./room-control.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-medium">
+              <i data-lucide="home" class="w-4 h-4"></i> 房間控制
+            </a>
+            <a href="./energy.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="zap" class="w-4 h-4"></i> 能源監控
+            </a>
+            <a href="./package.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="package" class="w-4 h-4"></i> 包裹管理
+            </a>
+            <a href="./maintenance.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="wrench" class="w-4 h-4"></i> 維修報修
+            </a>
+            <a href="./visitor.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="users" class="w-4 h-4"></i> 訪客管理
+            </a>
+            <a href="./medical.html"
+               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
+              <i data-lucide="heart-pulse" class="w-4 h-4"></i> 緊急通知
+            </a>
+          </nav>
+
+          <div class="p-4 border-t border-gray-100">
+            <div class="flex items-center gap-3 mb-3">
+              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+              </div>
+              <div class="flex-1 min-w-0">
+                <p id="sidebar-name" class="text-sm font-medium text-gray-900 truncate">${userData.name}</p>
+                <p id="sidebar-room" class="text-xs text-gray-400 truncate">${userData.room}</p>
+              </div>
+            </div>
+            <button id="logoutBtn"
+              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
+              <i data-lucide="log-out" class="w-4 h-4"></i> 登出
+            </button>
+          </div>
+        </aside>
+
+        <!-- 右側主內容 -->
+        <div class="flex-1 flex flex-col ml-64 min-h-screen">
+          <header class="bg-gray-50 border-b border-gray-200 px-6 py-5 sticky top-0 z-10">
+            <h1 class="text-xl font-bold text-gray-900">房間控制</h1>
+            <p class="text-lg text-gray-500 mt-1">${userData.room}｜${userData.sid}</p>
+          </header>
+
+          <main id="main-content" class="p-8 max-w-[1500px] mx-auto w-full">
+            ${renderMainContent()}
+          </main>
+        </div>
+      </div>
+    `;
+
+    initIcons();
+    bindLogout();
+    bindControls();
+  }
+
+  function updateContent() {
+    if (!shellBuilt) {
+      renderShell();
+      return;
+    }
+
+    const mainEl = document.getElementById('main-content');
+    if (mainEl) mainEl.innerHTML = renderMainContent();
+
+    const nameEl = document.getElementById('sidebar-name');
+    const roomEl = document.getElementById('sidebar-room');
+    if (nameEl) nameEl.textContent = userData.name;
+    if (roomEl) roomEl.textContent = userData.room;
+
+    initIcons();
+    bindControls();
+  }
+
+  async function saveControlState() {
+    const roomKey = userData.room && userData.room !== '—' ? userData.room : studentId;
+    await setDoc(doc(db, 'roomControl', roomKey), {
+      room: userData.room || '',
+      studentId,
+      ...controlState,
+      updatedAt: new Date().toISOString()
+    }, { merge: true });
+  }
+
+  function bindControls() {
+    document.querySelectorAll('[data-device]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const key = btn.dataset.device;
+        controlState[key] = !controlState[key];
+        updateContent();
+        try {
+          await saveControlState();
+        } catch (error) {
+          console.error('儲存裝置狀態失敗:', error);
+        }
+      });
+    });
+
+    document.querySelectorAll('[data-scene]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const sceneKey = btn.dataset.scene;
+        controlState = { ...controlState, ...scenes[sceneKey].state };
+        updateContent();
+        try {
+          await saveControlState();
+        } catch (error) {
+          console.error('儲存情境模式失敗:', error);
+        }
+      });
+    });
+  }
+
+  renderShell();
+
+  onSnapshot(doc(db, 'users', studentId), async (snap) => {
+    if (snap.exists()) {
+      const d = snap.data();
+      userData = {
+        name: d.name || cachedUser?.name || '使用者',
+        room: d.room || cachedUser?.room || '—',
+        sid:  d.studentId || studentId
+      };
+
+      localStorage.setItem('currentUser', JSON.stringify({
+        id: studentId,
+        studentId: d.studentId || studentId,
+        name: d.name || '',
+        room: d.room || '',
+        bed: d.bed || '',
+        class: d.class || ''
+      }));
+
+      const roomKey = userData.room && userData.room !== '—' ? userData.room : studentId;
+      try {
+        const roomSnap = await getDoc(doc(db, 'roomControl', roomKey));
+        if (roomSnap.exists()) {
+          controlState = { ...defaultControl, ...roomSnap.data() };
+        }
+      } catch (error) {
+        console.error('讀取房間控制資料失敗:', error);
+      }
+
+      // 更新 header 上的 room｜sid
+      const header = document.querySelector('header');
+      if (header) {
+        const p = header.querySelector('p');
+        if (p) p.textContent = `${userData.room}｜${userData.sid}`;
+      }
+
+      updateContent();
+    }
+  }, (error) => {
+    console.error('讀取使用者資料失敗:', error);
+  });
 </script>
 </body>
 </html>
