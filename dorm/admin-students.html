@@ -9,7 +9,6 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     body { font-family: 'Noto Sans TC', sans-serif; }
-    /* 緊急警報視覺動畫 */
     .emergency-border { animation: blink border-color 0.5s infinite alternate; border-width: 4px; }
     @keyframes blink { from { border-color: #ef4444; } to { border-color: #fee2e2; } }
   </style>
@@ -29,36 +28,58 @@
       </a>
     </div>
 
+    <!-- 上方表單：同時支援新增 / 修改 -->
     <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-8">
-      <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">
-        <i data-lucide="user-plus" class="w-5 h-5"></i> 輸入新學生
-      </h2>
+      <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-bold text-slate-700 flex items-center gap-2">
+          <i data-lucide="user-plus" class="w-5 h-5"></i>
+          <span id="formTitle">輸入新學生</span>
+        </h2>
+        <button
+          id="cancelEditBtn"
+          type="button"
+          class="hidden text-xs px-3 py-1 rounded-lg border border-slate-300 text-slate-500 hover:bg-slate-50 transition-colors"
+        >
+          取消編輯
+        </button>
+      </div>
+
       <form id="studentForm" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-400 ml-1">系級</label>
-          <input type="text" id="sClass" placeholder="例如：資管三B" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+          <input type="text" id="sClass" placeholder="例如：資管三B"
+                 class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-400 ml-1">學號 (登入帳號)</label>
-          <input type="text" id="sId" placeholder="學號" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+          <input type="text" id="sId" placeholder="學號"
+                 class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-400 ml-1">姓名</label>
-          <input type="text" id="sName" placeholder="姓名" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+          <input type="text" id="sName" placeholder="姓名"
+                 class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-400 ml-1">電話</label>
-          <input type="tel" id="sPhone" placeholder="09xx-xxx-xxx" class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+          <input type="tel" id="sPhone" placeholder="09xx-xxx-xxx"
+                 class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
         </div>
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-400 ml-1">房號-床號</label>
           <div class="flex gap-1">
-            <input type="text" id="sRoom" placeholder="房號" class="w-2/3 border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
-            <input type="text" id="sBed" placeholder="床" class="w-1/3 border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+            <input type="text" id="sRoom" placeholder="房號"
+                   class="w-2/3 border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+            <input type="text" id="sBed" placeholder="床"
+                   class="w-1/3 border p-3 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" required>
           </div>
         </div>
         <div class="flex items-end">
-          <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
+          <button
+            type="submit"
+            id="submitBtn"
+            class="w-full bg-blue-600 text-white p-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100"
+          >
             新增學生
           </button>
         </div>
@@ -66,6 +87,7 @@
       <div id="formMsg" class="mt-4 p-3 rounded-xl text-sm hidden"></div>
     </div>
 
+    <!-- 學生列表 -->
     <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
       <div class="p-4 bg-slate-50 border-b flex justify-between items-center">
         <span class="font-bold text-slate-700">全體成員列表</span>
@@ -83,8 +105,7 @@
               <th class="p-4 font-medium text-center">操作</th>
             </tr>
           </thead>
-          <tbody id="studentList" class="divide-y divide-slate-100">
-            </tbody>
+          <tbody id="studentList" class="divide-y divide-slate-100"></tbody>
         </table>
       </div>
     </div>
@@ -94,7 +115,10 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc, query, where } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import {
+      getFirestore, collection, doc, setDoc,
+      onSnapshot, deleteDoc, query, where
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
     const firebaseConfig = { 
       apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I", 
@@ -105,35 +129,86 @@
       appId: "1:240227925869:web:5a71f95a2f18bef1972464" 
     };
     const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
+    const db  = getFirestore(app);
 
-    // 1. 權限檢查
+    // 權限檢查
     if (localStorage.getItem('userRole') !== 'admin') window.location.href = './login.html';
 
-    // 2. 全域緊急醫療監聽 (跨分頁提醒)
+    // 緊急醫療監聽
     const alarm = document.getElementById('alarmAudio');
     onSnapshot(query(collection(db, 'medical'), where('status', '==', 'processing')), snap => {
       if (!snap.empty) {
         alarm.play().catch(() => console.log("音效等待點擊觸發"));
         const data = snap.docs[0].data();
         setTimeout(() => {
-          if(confirm(`🚨 【緊急求助】\n\n房號：${data.room}\n學生：${data.name}\n\n是否立刻前往醫療分頁處理？`)) {
+          if (confirm(`🚨 【緊急求助】\n\n房號：${data.room}\n學生：${data.name}\n\n是否立刻前往醫療分頁處理？`)) {
             window.location.href = './admin-medical.html';
           }
         }, 500);
       } else {
-        alarm.pause(); alarm.currentTime = 0;
+        alarm.pause();
+        alarm.currentTime = 0;
       }
     });
 
-    // 3. 監聽學生清單
+    // ===== 修改模式狀態 =====
+    let editingId = null; // 正在編輯的學號（也是 doc id）
+
+    const form      = document.getElementById('studentForm');
+    const formMsg   = document.getElementById('formMsg');
+    const submitBtn = document.getElementById('submitBtn');
+    const formTitle = document.getElementById('formTitle');
+    const cancelEditBtn = document.getElementById('cancelEditBtn');
+
+    const sClass = document.getElementById('sClass');
+    const sId    = document.getElementById('sId');
+    const sName  = document.getElementById('sName');
+    const sPhone = document.getElementById('sPhone');
+    const sRoom  = document.getElementById('sRoom');
+    const sBed   = document.getElementById('sBed');
+
+    function setCreateMode() {
+      editingId = null;
+      formTitle.textContent = '輸入新學生';
+      submitBtn.textContent = '新增學生';
+      submitBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
+      submitBtn.classList.add('bg-blue-600', 'hover:bg-blue-700');
+      sId.disabled = false;
+      cancelEditBtn.classList.add('hidden');
+      form.reset();
+    }
+
+    function setEditMode(student) {
+      editingId = student.studentId;
+      formTitle.textContent = `編輯學生：${student.studentId}`;
+      submitBtn.textContent = '更新學生資料';
+      submitBtn.classList.remove('bg-blue-600', 'hover:bg-blue-700');
+      submitBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
+      cancelEditBtn.classList.remove('hidden');
+
+      sClass.value = student.class || '';
+      sId.value    = student.studentId || '';
+      sName.value  = student.name || '';
+      sPhone.value = student.phone || '';
+      sRoom.value  = student.room || '';
+      sBed.value   = student.bed || '';
+      sId.disabled = true; // 不允許修改學號（doc id）
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    cancelEditBtn.addEventListener('click', () => {
+      setCreateMode();
+    });
+
+    // 監聽學生清單
     onSnapshot(collection(db, 'users'), snap => {
       const list = document.getElementById('studentList');
       const countEl = document.getElementById('studentCount');
       
       const students = snap.docs
         .filter(d => d.data().role === 'student')
-        .map(d => ({ id: d.id, ...d.data() }));
+        .map(d => ({ id: d.id, ...d.data() }))
+        .sort((a, b) => (a.room || '').localeCompare(b.room || '') || (a.bed || '').localeCompare(b.bed || ''));
 
       countEl.innerText = `目前共計 ${students.length} 位學生`;
 
@@ -143,53 +218,91 @@
           <td class="p-4 font-mono font-bold text-blue-600">${s.studentId}</td>
           <td class="p-4 font-semibold text-slate-800">${s.name}</td>
           <td class="p-4 text-slate-500">${s.phone || '—'}</td>
-          <td class="p-4"><span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold">${s.room}-${s.bed}</span></td>
-          <td class="p-4 text-center">
-            <button onclick="deleteStudent('${s.id}')" class="text-slate-300 hover:text-red-500 transition-colors p-2">
+          <td class="p-4">
+            <span class="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg text-xs font-bold">
+              ${s.room || '—'}-${s.bed || '—'}
+            </span>
+          </td>
+          <td class="p-4 text-center space-x-2">
+            <button
+              onclick="editStudent('${s.studentId}')"
+              class="inline-flex items-center justify-center text-slate-400 hover:text-emerald-600 transition-colors p-2"
+              title="編輯"
+            >
+              <i data-lucide="edit-3" class="w-5 h-5"></i>
+            </button>
+            <button
+              onclick="deleteStudent('${s.studentId}')"
+              class="inline-flex items-center justify-center text-slate-300 hover:text-red-500 transition-colors p-2"
+              title="刪除"
+            >
               <i data-lucide="trash-2" class="w-5 h-5"></i>
             </button>
           </td>
         </tr>
       `).join('') || '<tr><td colspan="6" class="p-20 text-center text-slate-400">目前無學生資料</td></tr>';
       
+      // 把整個列表暫存到 window 上，給 editStudent 用
+      window.__studentsCache = students;
       lucide.createIcons();
     });
 
-    // 4. 新增學生邏輯
-    document.getElementById('studentForm').onsubmit = async (e) => {
+    // 新增 / 更新 學生
+    form.onsubmit = async (e) => {
       e.preventDefault();
-      const msg = document.getElementById('formMsg');
-      const sId = document.getElementById('sId').value.trim();
+      const sidVal = sId.value.trim();
+      const data = {
+        class: sClass.value.trim(),
+        studentId: sidVal,
+        name: sName.value.trim(),
+        phone: sPhone.value.trim(),
+        room: sRoom.value.trim(),
+        bed: sBed.value.trim(),
+        role: 'student'
+      };
+
+      // 新增時預設密碼 = 學號；編輯時不會改密碼
+      if (!editingId) {
+        data.password = sidVal;
+      }
 
       try {
-        await setDoc(doc(db, 'users', sId), {
-          class: document.getElementById('sClass').value.trim(),
-          studentId: sId,
-          name: document.getElementById('sName').value.trim(),
-          phone: document.getElementById('sPhone').value.trim(),
-          room: document.getElementById('sRoom').value.trim(),
-          bed: document.getElementById('sBed').value.trim(),
-          password: sId, // 預設密碼同學號
-          role: 'student'
-        });
+        await setDoc(doc(db, 'users', sidVal), data, { merge: true });
 
-        msg.innerText = '✅ 學生帳號已成功建立 (預設密碼同學號)';
-        msg.className = 'mt-4 p-3 rounded-xl text-sm bg-green-50 text-green-700 block font-bold';
-        e.target.reset();
+        formMsg.innerText = editingId
+          ? '✅ 學生資料已更新'
+          : '✅ 學生帳號已成功建立 (預設密碼同學號)';
+        formMsg.className = 'mt-4 p-3 rounded-xl text-sm bg-green-50 text-green-700 block font-bold';
+
+        if (editingId) {
+          setCreateMode();
+        } else {
+          form.reset();
+        }
       } catch (err) {
-        msg.innerText = '❌ 錯誤：' + err.message;
-        msg.className = 'mt-4 p-3 rounded-xl text-sm bg-red-50 text-red-700 block';
+        formMsg.innerText = '❌ 錯誤：' + err.message;
+        formMsg.className = 'mt-4 p-3 rounded-xl text-sm bg-red-50 text-red-700 block';
       }
-      setTimeout(() => msg.classList.add('hidden'), 5000);
+      setTimeout(() => formMsg.classList.add('hidden'), 5000);
     };
 
-    // 5. 刪除學生邏輯
+    // 刪除學生
     window.deleteStudent = async (id) => {
-      if(confirm(`確定要將學號 ${id} 從系統中永久移除嗎？\n此動作將使其無法登入。`)) {
+      if (confirm(`確定要將學號 ${id} 從系統中永久移除嗎？\n此動作將使其無法登入。`)) {
         await deleteDoc(doc(db, 'users', id));
+        if (editingId === id) setCreateMode();
       }
     };
 
+    // 編輯學生：從快取找出該筆資料，帶入表單
+    window.editStudent = (studentId) => {
+      const students = window.__studentsCache || [];
+      const target = students.find(s => s.studentId === studentId);
+      if (!target) return;
+      setEditMode(target);
+    };
+
+    setCreateMode();
     lucide.createIcons();
   </script>
 </body>

@@ -21,7 +21,9 @@
   <div class="flex min-h-screen">
     <aside class="w-64 bg-slate-900 text-white fixed inset-y-0 flex flex-col p-6 z-50">
       <div class="flex items-center gap-3 mb-10 pb-6 border-b border-slate-800">
-        <div class="bg-blue-600 p-2 rounded-lg"><i data-lucide="shield-check"></i></div>
+        <div class="bg-blue-600 p-2 rounded-lg">
+          <i data-lucide="shield-check"></i>
+        </div>
         <span class="font-bold text-xl uppercase tracking-wider">管理端後台</span>
       </div>
       
@@ -32,7 +34,7 @@
         <a href="./admin-students.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
           <i data-lucide="users"></i> 學生名單管理
         </a>
-        <a href="./admin-package.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
+        <a href="./admin-package.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text白 rounded-xl transition-all">
           <i data-lucide="package"></i> 包裹入庫登記
         </a>
         <a href="./admin-visitor.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
@@ -57,38 +59,64 @@
         <p class="text-slate-500 mt-1" id="dateDisplay"></p>
       </header>
 
+      <!-- 主卡片：全部可點 -->
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div id="medCard" class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all">
+        <!-- 緊急醫療 -->
+        <div
+          id="medCard"
+          class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+          onclick="window.location.href='./admin-medical.html'"
+        >
           <div class="flex justify-between items-start mb-4">
-            <div class="p-3 rounded-2xl bg-slate-50 text-slate-400" id="medIconBox"><i data-lucide="ambulance"></i></div>
+            <div class="p-3 rounded-2xl bg-slate-50 text-slate-400" id="medIconBox">
+              <i data-lucide="ambulance"></i>
+            </div>
             <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-400" id="medStatusTag">正常</span>
           </div>
           <p class="text-slate-500 text-sm">緊急求助案件</p>
           <div id="medCount" class="text-3xl font-bold mt-1">0</div>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <!-- 包裹 -->
+        <div
+          class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+          onclick="window.location.href='./admin-package.html'"
+        >
           <div class="flex justify-between items-start mb-4">
-            <div class="p-3 rounded-2xl bg-blue-50 text-blue-600"><i data-lucide="package"></i></div>
+            <div class="p-3 rounded-2xl bg-blue-50 text-blue-600">
+              <i data-lucide="package"></i>
+            </div>
             <span class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-600">待領</span>
           </div>
           <p class="text-slate-500 text-sm">包裹待領取</p>
           <div id="pkgCount" class="text-3xl font-bold mt-1">0</div>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <!-- 訪客 -->
+        <div
+          class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+          onclick="window.location.href='./admin-visitor.html'"
+        >
           <div class="flex justify-between items-start mb-4">
-            <div class="p-3 rounded-2xl bg-purple-50 text-purple-600"><i data-lucide="user-check"></i></div>
+            <div class="p-3 rounded-2xl bg-purple-50 text-purple-600">
+              <i data-lucide="user-check"></i>
+            </div>
             <span class="text-xs font-bold px-2 py-1 rounded bg-purple-100 text-purple-600">審核中</span>
           </div>
           <p class="text-slate-500 text-sm">訪客申請待辦</p>
           <div id="visCount" class="text-3xl font-bold mt-1">0</div>
         </div>
 
-        <div class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm">
+        <!-- 維修 -->
+        <div
+          class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+          onclick="window.location.href='./admin-maintenance.html'"
+        >
           <div class="flex justify-between items-start mb-4">
-            <div class="p-3 rounded-2xl bg-orange-50 text-orange-600"><i data-lucide="wrench"></i></div>
-            <span class="text-xs font-bold px-2 py-1 rounded bg-orange-100 text-orange-600">維修中</span>
+            <div class="p-3 rounded-2xl bg-orange-50 text-orange-600">
+              <i data-lucide="wrench"></i>
+            </div>
+            <span class="text-xs font-bold px-2 py-1 rounded bg-orange-100 text-orange-600">尚未處理</span>
           </div>
           <p class="text-slate-500 text-sm">設備報修案件</p>
           <div id="mntCount" class="text-3xl font-bold mt-1">0</div>
@@ -97,7 +125,9 @@
       
       <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
         <a href="./admin-students.html" class="p-8 bg-white rounded-3xl border border-slate-200 hover:border-blue-500 transition-all group">
-          <h3 class="font-bold flex items-center gap-2 group-hover:text-blue-600"><i data-lucide="user-plus"></i> 管理學生名單</h3>
+          <h3 class="font-bold flex items-center gap-2 group-hover:text-blue-600">
+            <i data-lucide="user-plus"></i> 管理學生名單
+          </h3>
           <p class="text-sm text-slate-400 mt-2">點擊進入新增、刪除或修改學生基本資料</p>
         </a>
       </div>
@@ -108,7 +138,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
     const firebaseConfig = { 
       apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I", 
@@ -121,13 +151,14 @@
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
-    // 1. 權限與基礎顯示
+    // 1. 權限與日期
     if (localStorage.getItem('userRole') !== 'admin') window.location.href = './login.html';
-    document.getElementById('dateDisplay').innerText = new Date().toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+    document.getElementById('dateDisplay').innerText =
+      new Date().toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
 
     const alarm = document.getElementById('alarmAudio');
 
-    // 2. 全域緊急醫療監聽器
+    // 2. 緊急醫療監聽
     onSnapshot(
       query(collection(db, 'medical'), where('status', '==', 'processing')),
       (snap) => {
@@ -164,26 +195,33 @@
       }
     );
 
-    // 3. 一般數據即時監聽
+    // 3. 包裹：status === 'waiting'
     onSnapshot(
       query(collection(db, 'packages'), where('status', '==', 'waiting')),
       s => document.getElementById('pkgCount').innerText = s.size
     );
 
-    // ⚠ 這一行的集合名稱請跟你 Firestore 實際一致：
-    // 如果你集合叫 "visitors"（複數），用下面這行；
-    // 如果叫 "visitor"（單數），改回 'visitor' 即可。
+    // 4. 訪客：status === 'pending'（集合名稱 visitor）
     onSnapshot(
-      query(collection(db, 'visitors'), where('status', '==', 'pending')),
+      query(collection(db, 'visitor'), where('status', '==', 'pending')),
       s => document.getElementById('visCount').innerText = s.size
     );
 
+    // 5. 維修：所有「尚未完成」的都算（非 completed / 已完成）
     onSnapshot(
-      query(collection(db, 'maintenance'), where('status', '==', '處理中')),
-      s => document.getElementById('mntCount').innerText = s.size
+      collection(db, 'maintenance'),
+      snap => {
+        const docs = snap.docs.map(d => d.data());
+        const notDone = docs.filter(m => {
+          const s = m.status || '';
+          const isDone = (s === 'completed' || s === '已完成');
+          return !isDone;
+        });
+        document.getElementById('mntCount').innerText = notDone.length;
+      }
     );
 
-    // 4. 登出
+    // 6. 登出
     document.getElementById('logoutBtn').onclick = () => {
       localStorage.clear();
       window.location.href = './login.html';
@@ -192,4 +230,3 @@
     lucide.createIcons();
   </script>
 </body>
-</html>

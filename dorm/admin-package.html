@@ -28,7 +28,7 @@
       <h2 class="text-lg font-bold mb-4 text-slate-700 flex items-center gap-2">
         <i data-lucide="plus-circle" class="w-5 h-5"></i> 新增入庫包裹
       </h2>
-      <form id="packageForm" class="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <form id="packageForm" class="grid grid-cols-1 md:grid-cols-5 gap-4">
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-400 ml-1">收件人學號</label>
           <input type="text" id="pStudentId" placeholder="輸入學號" class="w-full border p-3 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" required>
@@ -40,6 +40,10 @@
         <div class="space-y-1">
           <label class="text-xs font-bold text-slate-400 ml-1">單號/取件末三碼</label>
           <input type="text" id="pTracking" placeholder="輸入單號" class="w-full border p-3 rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" required>
+        </div>
+        <div class="space-y-1">
+          <label class="text-xs font-bold text-slate-400 ml-1">登記時間</label>
+          <input type="text" id="pRegisterTime" readonly class="w-full border p-3 rounded-2xl bg-slate-50 text-slate-500 outline-none">
         </div>
         <div class="flex items-end">
           <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-2xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-100">
@@ -115,9 +119,11 @@
           trackingNumber: track,
           status: 'waiting',
           createdAt: serverTimestamp(),
-          storageLocation: '宿舍管理室'
+          storageLocation: '宿舍管理室',
+          registerTime: document.getElementById('pRegisterTime').value
         });
         e.target.reset();
+        fillRegisterTime();
         alert('✅ 包裹入庫登記成功');
       } catch (err) {
         alert('❌ 錯誤：' + err.message);
@@ -125,11 +131,16 @@
     };
 
     // 4. 監聽待領清單
-    onSnapshot(query(collection(db, 'packages'), where('status', '==', 'waiting'), orderBy('createdAt', 'desc')), snap => {
+    onSnapshot(query(collection(db, 'packages'), where('status', '==', 'waiting')), snap => {
       const list = document.getElementById('waitingList');
       document.getElementById('waitingCount').innerText = `${snap.size} 件待領`;
       
-      list.innerHTML = snap.docs.map(d => {
+      const sorted = snap.docs.sort((a, b) => {
+        const ta = a.data().createdAt?.toMillis?.() || 0;
+        const tb = b.data().createdAt?.toMillis?.() || 0;
+        return tb - ta;
+      });
+      list.innerHTML = sorted.map(d => {
         const p = d.data();
         const date = p.createdAt?.toDate().toLocaleDateString() || '剛才';
         return `
@@ -148,9 +159,14 @@
     });
 
     // 5. 監聽歷史紀錄 (最近領取)
-    onSnapshot(query(collection(db, 'packages'), where('status', '==', 'picked'), orderBy('pickupDate', 'desc')), snap => {
+    onSnapshot(query(collection(db, 'packages'), where('status', '==', 'picked')), snap => {
       const list = document.getElementById('historyList');
-      list.innerHTML = snap.docs.slice(0, 8).map(d => {
+      const sortedH = snap.docs.sort((a, b) => {
+        const ta = a.data().createdAt?.toMillis?.() || 0;
+        const tb = b.data().createdAt?.toMillis?.() || 0;
+        return tb - ta;
+      });
+      list.innerHTML = sortedH.slice(0, 8).map(d => {
         const p = d.data();
         return `
           <div class="p-4 bg-white">
@@ -172,7 +188,22 @@
       }
     };
 
-    lucide.createIcons();
+
+    function formatNow() {
+      const now = new Date();
+      return now.getFullYear() + '-' +
+        String(now.getMonth() + 1).padStart(2, '0') + '-' +
+        String(now.getDate()).padStart(2, '0') + ' ' +
+        String(now.getHours()).padStart(2, '0') + ':' +
+        String(now.getMinutes()).padStart(2, '0') + ':' +
+        String(now.getSeconds()).padStart(2, '0');
+    }
+    function fillRegisterTime() {
+      document.getElementById('pRegisterTime').value = formatNow();
+    }
+    fillRegisterTime();
+
+        lucide.createIcons();
   </script>
 </body>
 </html>
