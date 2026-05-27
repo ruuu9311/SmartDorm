@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>寫入虛擬用電數據</title>
+  <style>
+    body { font-family: 'Noto Sans TC', sans-serif; display: flex; align-items: center; justify-content: center; min-height: 100vh; background: #f8fafc; margin: 0; }
+    .box { background: white; border-radius: 16px; padding: 2.5rem 3rem; box-shadow: 0 4px 24px rgba(0,0,0,0.08); text-align: center; max-width: 400px; width: 100%; }
+    .spinner { width: 40px; height: 40px; border: 4px solid #dbeafe; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.8s linear infinite; margin: 0 auto 1rem; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    h2 { color: #1e293b; margin: 0 0 0.5rem; font-size: 18px; }
+    p { color: #64748b; font-size: 14px; margin: 0.2rem 0; }
+    .done { color: #16a34a; font-size: 2rem; margin-bottom: 0.5rem; }
+    a.btn { display: inline-block; margin-top: 1.5rem; padding: 0.6rem 1.5rem; background: #3b82f6; color: white; border-radius: 8px; text-decoration: none; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="box">
+    <div id="spinner" class="spinner"></div>
+    <h2 id="title">寫入虛擬用電數據中...</h2>
+    <p id="sub">請勿關閉此頁面</p>
+    <p id="detail" style="font-size:12px;color:#94a3b8;margin-top:0.5rem;"></p>
+  </div>
+
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getFirestore, doc, setDoc } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
+      authDomain: "smartdorm-3ab79.firebaseapp.com",
+      projectId: "smartdorm-3ab79",
+      storageBucket: "smartdorm-3ab79.firebasestorage.app",
+      messagingSenderId: "240227925869",
+      appId: "1:240227925869:web:5a71f95a2f18bef1972464"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db  = getFirestore(app);
+
+    // ✅ 目前你要測的學號
+    const studentId = '411220413';
+    const room      = '201'; // 想改成實際房號可以改這裡
+
+    // 給每天總用電：10~26 kWh，10% 機率有尖峰
+    function randomDailyUsage() {
+      const base  = 10 + Math.random() * 12;        // 10~22
+      const spike = Math.random() < 0.1 ? 4+Math.random()*4 : 0; // 偶爾 +4~8
+      return parseFloat((base + spike).toFixed(2));
+    }
+
+    // 給每小時：根據每日總量分配（白天較高）
+    function genHourlyUsage(total) {
+      const hours = Array(24).fill(0);
+      let remain = total;
+      for (let h = 0; h < 24; h++) {
+        // 白天 8-22 比例高
+        const weight =
+          (h >= 8 && h <= 11) ? 1.6 :
+          (h >= 12 && h <= 18) ? 2.0 :
+          (h >= 19 && h <= 22) ? 1.4 :
+          0.5;
+        hours[h] = weight;
+      }
+      const sumWeight = hours.reduce((a,b)=>a+b,0);
+      const kwhPerWeight = total / sumWeight;
+      for (let h = 0; h < 24; h++) {
+        let v = hours[h] * kwhPerWeight;
+        // 一點隨機誤差
+        v = v * (0.85 + Math.random()*0.3);
+        hours[h] = parseFloat(v.toFixed(2));
+      }
+      const diff = total - hours.reduce((a,b)=>a+b,0);
+      hours[12] = parseFloat((hours[12] + diff).toFixed(2)); // 把誤差補在中午
+      return hours;
+    }
+
+    async function main() {
+      const boxSub    = document.getElementById('sub');
+      const boxDetail = document.getElementById('detail');
+
+      const today = new Date();
+      today.setHours(12,0,0,0);
+
+      let count = 0;
+
+      // 先清楚告知要寫什麼
+      boxDetail.textContent = `學號 ${studentId}，建立最近 30 天每日 + 今天 24 小時的用電紀錄`;
+
+      // 最近 30 天，每天一筆 daily（只看日期）
+      for (let i = 29; i >= 0; i--) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const dateStr = d.toISOString().slice(0,10);
+        const docId   = `${studentId}_${dateStr}`;
+
+        const dailyUsage = randomDailyUsage();
+
+        await setDoc(doc(db, 'energy_records', docId), {
+          studentId,
+          room,
+          date:      dateStr,
+          timestamp: d.toISOString(),
+          usage:     dailyUsage
+        }, { merge: true });
+
+        count++;
+        boxSub.textContent = `已寫入每日用電：${count} 筆`;
+      }
+
+      // 今天再補 24 筆「每小時」資料，讓日視圖也有折線
+      const todayStr = today.toISOString().slice(0,10);
+      const todayDaily = randomDailyUsage();
+      const hours = genHourlyUsage(todayDaily);
+
+      let hourCount = 0;
+      for (let h = 0; h < 24; h++) {
+        const date = new Date(today);
+        date.setHours(h, 0, 0, 0);
+        const ts    = date.toISOString();
+        const docId = `${studentId}_${todayStr}_${String(h).padStart(2,'0')}`;
+
+        await setDoc(doc(db, 'energy_records', docId), {
+          studentId,
+          room,
+          date:      todayStr,
+          timestamp: ts,
+          usage:     hours[h],
+          hour:      h
+        });
+
+        hourCount++;
+        boxSub.textContent = `已寫入每日 + 每小時：${count} + ${hourCount} 筆`;
+      }
+
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('title').innerHTML =
+        '<span class="done">✅</span><br>虛擬用電數據建立完成';
+      boxSub.innerHTML =
+        `共建立 <strong>${count} 筆每日</strong> + <strong>${24} 筆每小時</strong> 紀錄<br>（學號：${studentId}）`;
+      boxDetail.innerHTML =
+        `<a class="btn" href="./energy.html">前往能源監控頁面</a>`;
+    }
+
+    main().catch(err => {
+      document.getElementById('spinner').style.display = 'none';
+      document.getElementById('title').style.color = '#ef4444';
+      document.getElementById('title').textContent = '❌ 寫入失敗';
+      document.getElementById('sub').textContent = err.message;
+    });
+  </script>
+</body>
+</html>

@@ -22,7 +22,7 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
   import {
-    getFirestore, doc, collection, onSnapshot, getDoc, getDocs
+    getFirestore, doc, collection, onSnapshot
   } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
   const firebaseConfig = {
@@ -40,6 +40,7 @@
   const studentId = localStorage.getItem('studentId');
   if (!studentId) {
     window.location.href = './login.html';
+    throw new Error('未登入');
   }
 
   const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
@@ -65,7 +66,6 @@
     });
   }
 
-  // 依時間回傳打招呼
   function getGreeting() {
     const now = new Date();
     const hour = now.getHours();
@@ -84,7 +84,7 @@
         icon: 'package',
         color: 'bg-blue-500',
         href: './package.html',
-        desc: '查看目前尚未領取的包裹'
+        desc: '只顯示你目前尚未領取的包裹'
       },
       {
         title: '訪客申請',
@@ -93,7 +93,7 @@
         icon: 'users',
         color: 'bg-green-500',
         href: './visitor.html',
-        desc: '管理訪客預約與審核狀態'
+        desc: '只顯示你自己的訪客申請紀錄'
       },
       {
         title: '維修案件',
@@ -102,7 +102,7 @@
         icon: 'wrench',
         color: 'bg-orange-500',
         href: './maintenance.html',
-        desc: '查看房間與公共區域報修'
+        desc: '只顯示你目前尚未完成的報修案件'
       },
       {
         title: '緊急醫療通報',
@@ -168,7 +168,6 @@
       </div>`;
   }
 
-  // 渲染 Header 內容的函數
   function renderHeader() {
     const greet = getGreeting();
     return `
@@ -312,7 +311,10 @@
   tryOnSnapshot(
     collection(db, 'packages'),
     (snap) => {
-      statsData.pkgCount = snap.docs.filter(d => d.data().status === 'waiting').length;
+      statsData.pkgCount = snap.docs.filter(d => {
+        const data = d.data();
+        return data.status === 'waiting' && data.studentId === studentId;
+      }).length;
       updateContent();
     },
     'packages'
@@ -321,7 +323,10 @@
   tryOnSnapshot(
     collection(db, 'visitor'),
     (snap) => {
-      statsData.visCount = snap.docs.filter(d => ['pending', 'approved'].includes(d.data().status)).length;
+      statsData.visCount = snap.docs.filter(d => {
+        const data = d.data();
+        return ['pending', 'approved'].includes(data.status) && data.studentId === studentId;
+      }).length;
       updateContent();
     },
     'visitor'
@@ -330,7 +335,12 @@
   tryOnSnapshot(
     collection(db, 'maintenance'),
     (snap) => {
-      statsData.mntCount = snap.docs.filter(d => d.data().status === 'processing' || d.data().status === '處理中').length;
+      statsData.mntCount = snap.docs.filter(d => {
+        const data = d.data();
+        const isMyRecord = data.studentId === studentId || data.ID === studentId;
+        const isPending = data.status === 'processing' || data.status === '處理中' || data.status === 'pending' || data.status === '待處理';
+        return isMyRecord && isPending;
+      }).length;
       updateContent();
     },
     'maintenance'

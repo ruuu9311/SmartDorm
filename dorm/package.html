@@ -55,7 +55,11 @@
   let packages = [];
   try {
     const snap = await getDocs(collection(db, 'packages'));
-    snap.forEach(d => packages.push({ id: d.id, ...d.data() }));
+    snap.forEach(d => {
+      const data = d.data();
+      const isMyPackage = data.studentId === sid || data.ID === sid;
+      if (isMyPackage) packages.push({ id: d.id, ...data });
+    });
   } catch (err) {
     console.warn('[packages] 讀取失敗:', err.code);
   }
