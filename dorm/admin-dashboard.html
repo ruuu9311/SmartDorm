@@ -1,144 +1,277 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>管理系統儀表板 - 智慧宿舍</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+  <link
+    rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap"
+  />
   <script src="https://unpkg.com/lucide@latest"></script>
+
   <style>
-    body { font-family: 'Noto Sans TC', sans-serif; }
-    .emergency-glow { animation: glow 1.5s infinite; }
+    body {
+      font-family: "Noto Sans TC", system-ui, -apple-system, BlinkMacSystemFont,
+        "Segoe UI", sans-serif;
+    }
+    .emergency-glow {
+      animation: glow 1.5s infinite;
+    }
     @keyframes glow {
-      0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
-      70% { box-shadow: 0 0 0 15px rgba(239, 68, 68, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+      0% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6);
+      }
+      70% {
+        box-shadow: 0 0 0 18px rgba(239, 68, 68, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(239, 68, 68, 0);
+      }
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-100 text-slate-900">
   <div class="flex min-h-screen">
-    <aside class="w-64 bg-slate-900 text-white fixed inset-y-0 flex flex-col p-6 z-50">
-      <div class="flex items-center gap-3 mb-10 pb-6 border-b border-slate-800">
-        <div class="bg-blue-600 p-2 rounded-lg">
-          <i data-lucide="shield-check"></i>
+    <!-- 側邊選單 -->
+    <aside
+      class="fixed inset-y-0 z-50 flex w-64 flex-col bg-slate-950/95 backdrop-blur-sm p-6 text-white shadow-xl"
+    >
+      <div
+        class="mb-8 flex items-center gap-3 border-b border-slate-800/70 pb-5"
+      >
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400">
+          <i data-lucide="shield-check" class="h-5 w-5"></i>
         </div>
-        <span class="font-bold text-xl uppercase tracking-wider">管理端後台</span>
+        <div class="leading-tight">
+          <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+            Smart Dormitory
+          </p>
+          <p class="text-lg font-bold tracking-wide">管理端後台</p>
+        </div>
       </div>
-      
-      <nav class="flex-1 space-y-2 text-sm">
-        <a href="#" class="flex items-center gap-3 px-4 py-3 bg-blue-600 rounded-xl font-bold transition-all">
-          <i data-lucide="layout-dashboard"></i> 數據概覽
+
+      <nav class="flex-1 space-y-1 text-sm">
+        <a
+          href="#"
+          class="flex items-center gap-3 rounded-xl bg-slate-800 px-4 py-3 font-semibold text-slate-50 shadow-sm ring-1 ring-slate-700/60"
+        >
+          <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+          <span>數據概覽</span>
         </a>
-        <a href="./admin-students.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
-          <i data-lucide="users"></i> 學生名單管理
+
+        <a
+          href="./admin-students.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition-all hover:bg-slate-800/80 hover:text-slate-50"
+        >
+          <i data-lucide="users" class="h-4 w-4"></i>
+          <span>學生名單管理</span>
         </a>
-        <a href="./admin-package.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text白 rounded-xl transition-all">
-          <i data-lucide="package"></i> 包裹入庫登記
+
+        <a
+          href="./admin-package.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition-all hover:bg-slate-800/80 hover:text-slate-50"
+        >
+          <i data-lucide="package" class="h-4 w-4"></i>
+          <span>包裹入庫登記</span>
         </a>
-        <a href="./admin-visitor.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
-          <i data-lucide="user-plus"></i> 訪客申請審核
+
+        <a
+          href="./admin-visitor.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition-all hover:bg-slate-800/80 hover:text-slate-50"
+        >
+          <i data-lucide="user-plus" class="h-4 w-4"></i>
+          <span>訪客申請審核</span>
         </a>
-        <a href="./admin-maintenance.html" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white rounded-xl transition-all">
-          <i data-lucide="wrench"></i> 設備報修處理
+
+        <a
+          href="./admin-maintenance.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition-all hover:bg-slate-800/80 hover:text-slate-50"
+        >
+          <i data-lucide="wrench" class="h-4 w-4"></i>
+          <span>設備報修處理</span>
         </a>
-        <a href="./admin-medical.html" class="flex items-center gap-3 px-4 py-3 text-red-400 hover:bg-red-900/30 rounded-xl transition-all font-bold">
-          <i data-lucide="ambulance"></i> 緊急醫療監控
+
+        <a
+          href="./admin-medical.html"
+          class="mt-2 flex items-center gap-3 rounded-xl px-4 py-3 font-semibold text-red-400 transition-all hover:bg-red-900/40"
+        >
+          <i data-lucide="ambulance" class="h-4 w-4"></i>
+          <span>緊急醫療監控</span>
         </a>
       </nav>
 
-      <button id="logoutBtn" class="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-red-400 transition-colors text-sm border-t border-slate-800 mt-4 pt-4">
-        <i data-lucide="log-out"></i> 安全登出
+      <button
+        id="logoutBtn"
+        type="button"
+        class="mt-6 flex items-center gap-3 border-t border-slate-800/60 px-4 pt-4 text-xs font-medium text-slate-500 transition-colors hover:text-red-400"
+      >
+        <i data-lucide="log-out" class="h-4 w-4"></i>
+        <span>安全登出</span>
       </button>
     </aside>
 
-    <main class="flex-1 ml-64 p-10">
-      <header class="mb-10">
-        <h1 class="text-3xl font-bold text-slate-800">智慧宿舍系統概覽</h1>
-        <p class="text-slate-500 mt-1" id="dateDisplay"></p>
+    <!-- 主內容 -->
+    <main class="ml-64 flex-1 p-10">
+      <header class="mb-8 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-medium uppercase tracking-[0.2em] text-slate-400">
+            Dashboard
+          </p>
+          <h1 class="mt-1 text-3xl font-bold text-slate-900">
+            智慧宿舍系統概覽
+          </h1>
+          <p id="dateDisplay" class="mt-1 text-sm text-slate-500"></p>
+        </div>
+        <div class="hidden md:flex items-center gap-2 text-xs text-slate-400">
+          <span class="h-2 w-2 rounded-full bg-emerald-400"></span>
+          <span>系統連線正常</span>
+        </div>
       </header>
 
-      <!-- 主卡片：全部可點 -->
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <!-- 四大總覽卡片 -->
+      <section
+        class="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4"
+      >
         <!-- 緊急醫療 -->
         <div
           id="medCard"
-          class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+          class="cursor-pointer rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm shadow-slate-200/60 transition-all hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
           onclick="window.location.href='./admin-medical.html'"
         >
-          <div class="flex justify-between items-start mb-4">
-            <div class="p-3 rounded-2xl bg-slate-50 text-slate-400" id="medIconBox">
-              <i data-lucide="ambulance"></i>
+          <div class="mb-4 flex items-start justify-between">
+            <div
+              id="medIconBox"
+              class="flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-50 text-slate-400"
+            >
+              <i data-lucide="ambulance" class="h-5 w-5"></i>
             </div>
-            <span class="text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-400" id="medStatusTag">正常</span>
+            <span
+              id="medStatusTag"
+              class="rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-slate-500"
+            >
+              正常
+            </span>
           </div>
-          <p class="text-slate-500 text-sm">緊急求助案件</p>
-          <div id="medCount" class="text-3xl font-bold mt-1">0</div>
+          <p class="text-sm text-slate-500">緊急求助案件</p>
+          <div
+            id="medCount"
+            class="mt-2 text-3xl font-semibold tracking-tight text-slate-900"
+          >
+            0
+          </div>
         </div>
 
         <!-- 包裹 -->
         <div
-          class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+          class="cursor-pointer rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm shadow-slate-200/60 transition-all hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
           onclick="window.location.href='./admin-package.html'"
         >
-          <div class="flex justify-between items-start mb-4">
-            <div class="p-3 rounded-2xl bg-blue-50 text-blue-600">
-              <i data-lucide="package"></i>
+          <div class="mb-4 flex items-start justify-between">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600">
+              <i data-lucide="package" class="h-5 w-5"></i>
             </div>
-            <span class="text-xs font-bold px-2 py-1 rounded bg-blue-100 text-blue-600">待領</span>
+            <span
+              class="rounded-full bg-blue-100 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-blue-700"
+            >
+              待領
+            </span>
           </div>
-          <p class="text-slate-500 text-sm">包裹待領取</p>
-          <div id="pkgCount" class="text-3xl font-bold mt-1">0</div>
+          <p class="text-sm text-slate-500">包裹待領取</p>
+          <div
+            id="pkgCount"
+            class="mt-2 text-3xl font-semibold tracking-tight text-slate-900"
+          >
+            0
+          </div>
         </div>
 
         <!-- 訪客 -->
         <div
-          class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+          class="cursor-pointer rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm shadow-slate-200/60 transition-all hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
           onclick="window.location.href='./admin-visitor.html'"
         >
-          <div class="flex justify-between items-start mb-4">
-            <div class="p-3 rounded-2xl bg-purple-50 text-purple-600">
-              <i data-lucide="user-check"></i>
+          <div class="mb-4 flex items-start justify-between">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-purple-50 text-purple-600">
+              <i data-lucide="user-check" class="h-5 w-5"></i>
             </div>
-            <span class="text-xs font-bold px-2 py-1 rounded bg-purple-100 text-purple-600">審核中</span>
+            <span
+              class="rounded-full bg-purple-100 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-purple-700"
+            >
+              審核中
+            </span>
           </div>
-          <p class="text-slate-500 text-sm">訪客申請待辦</p>
-          <div id="visCount" class="text-3xl font-bold mt-1">0</div>
+          <p class="text-sm text-slate-500">訪客申請待辦</p>
+          <div
+            id="visCount"
+            class="mt-2 text-3xl font-semibold tracking-tight text-slate-900"
+          >
+            0
+          </div>
         </div>
 
         <!-- 維修 -->
         <div
-          class="bg-white p-6 rounded-3xl border border-slate-100 shadow-sm transition-all cursor-pointer hover:-translate-y-1 hover:shadow-lg"
+          class="cursor-pointer rounded-3xl border border-slate-200/80 bg-white p-6 shadow-sm shadow-slate-200/60 transition-all hover:-translate-y-1 hover:border-slate-300 hover:shadow-lg"
           onclick="window.location.href='./admin-maintenance.html'"
         >
-          <div class="flex justify-between items-start mb-4">
-            <div class="p-3 rounded-2xl bg-orange-50 text-orange-600">
-              <i data-lucide="wrench"></i>
+          <div class="mb-4 flex items-start justify-between">
+            <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+              <i data-lucide="wrench" class="h-5 w-5"></i>
             </div>
-            <span class="text-xs font-bold px-2 py-1 rounded bg-orange-100 text-orange-600">尚未處理</span>
+            <span
+              class="rounded-full bg-orange-100 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-orange-700"
+            >
+              尚未處理
+            </span>
           </div>
-          <p class="text-slate-500 text-sm">設備報修案件</p>
-          <div id="mntCount" class="text-3xl font-bold mt-1">0</div>
+          <p class="text-sm text-slate-500">設備報修案件</p>
+          <div
+            id="mntCount"
+            class="mt-2 text-3xl font-semibold tracking-tight text-slate-900"
+          >
+            0
+          </div>
         </div>
-      </div>
-      
-      <div class="mt-10 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <a href="./admin-students.html" class="p-8 bg-white rounded-3xl border border-slate-200 hover:border-blue-500 transition-all group">
-          <h3 class="font-bold flex items-center gap-2 group-hover:text-blue-600">
-            <i data-lucide="user-plus"></i> 管理學生名單
+      </section>
+
+      <!-- 其他入口 -->
+      <section class="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
+        <a
+          href="./admin-students.html"
+          class="group rounded-3xl border border-slate-200 bg-white/90 p-8 shadow-sm shadow-slate-200/60 transition-all hover:-translate-y-0.5 hover:border-blue-500/70 hover:shadow-md"
+        >
+          <h3
+            class="flex items-center gap-2 text-sm font-semibold text-slate-800 transition-colors group-hover:text-blue-600"
+          >
+            <i data-lucide="user-plus" class="h-4 w-4"></i>
+            <span>管理學生名單</span>
           </h3>
-          <p class="text-sm text-slate-400 mt-2">點擊進入新增、刪除或修改學生基本資料</p>
+          <p class="mt-2 text-xs leading-relaxed text-slate-500">
+            點擊進入新增、刪除或修改學生基本資料，統一管理宿舍成員帳號與使用權限。
+          </p>
         </a>
-      </div>
+      </section>
     </main>
   </div>
 
-  <audio id="alarmAudio" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto"></audio>
+  <audio
+    id="alarmAudio"
+    src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3"
+    preload="auto"
+  ></audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import { getFirestore, collection, onSnapshot, query, where } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+    import {
+      getFirestore,
+      collection,
+      onSnapshot,
+      query,
+      where,
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
     const firebaseConfig = { 
       apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I", 
@@ -148,47 +281,67 @@
       messagingSenderId: "240227925869", 
       appId: "1:240227925869:web:5a71f95a2f18bef1972464" 
     };
+
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
 
     // 1. 權限與日期
-    if (localStorage.getItem('userRole') !== 'admin') window.location.href = './login.html';
-    document.getElementById('dateDisplay').innerText =
-      new Date().toLocaleDateString('zh-TW', { year:'numeric', month:'long', day:'numeric', weekday:'long' });
+    if (localStorage.getItem("userRole") !== "admin") {
+      window.location.href = "./login.html";
+    }
 
-    const alarm = document.getElementById('alarmAudio');
+    document.getElementById("dateDisplay").innerText =
+      new Date().toLocaleDateString("zh-TW", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        weekday: "long",
+      });
+
+    const alarm = document.getElementById("alarmAudio");
 
     // 2. 緊急醫療監聽
     onSnapshot(
-      query(collection(db, 'medical'), where('status', '==', 'processing')),
+      query(collection(db, "medical"), where("status", "==", "processing")),
       (snap) => {
-        const card = document.getElementById('medCard');
-        const countEl = document.getElementById('medCount');
-        const statusTag = document.getElementById('medStatusTag');
-        const iconBox = document.getElementById('medIconBox');
-        
+        const card = document.getElementById("medCard");
+        const countEl = document.getElementById("medCount");
+        const statusTag = document.getElementById("medStatusTag");
+        const iconBox = document.getElementById("medIconBox");
+
         const count = snap.size;
         countEl.innerText = count;
 
         if (count > 0) {
-          card.classList.add('emergency-glow', 'border-red-500', 'bg-red-50');
-          statusTag.innerText = '緊急';
-          statusTag.className = 'text-xs font-bold px-2 py-1 rounded bg-red-500 text-white';
-          iconBox.className = 'p-3 rounded-2xl bg-red-500 text-white';
-          
-          alarm.play().catch(() => console.log("等待點擊啟用音效"));
+          card.classList.add("emergency-glow", "border-red-500", "bg-red-50");
+          statusTag.innerText = "緊急";
+          statusTag.className =
+            "rounded-full bg-red-500 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white";
+          iconBox.className =
+            "flex h-11 w-11 items-center justify-center rounded-2xl bg-red-500 text-white";
+
+          alarm.play().catch(() => {
+            console.log("等待點擊啟用音效");
+          });
 
           const data = snap.docs[0].data();
           setTimeout(() => {
-            if (confirm(`🚨 【緊急醫療求助通報】\n\n房號：${data.room}\n學生：${data.name}\n學號：${data.studentId}\n\n是否立即前往處理？`)) {
-              window.location.href = './admin-medical.html';
+            if (
+              confirm(
+                `🚨 【緊急醫療求助通報】\n\n房號：${data.room}\n學生：${data.name}\n學號：${data.studentId}\n\n是否立即前往處理？`
+              )
+            ) {
+              window.location.href = "./admin-medical.html";
             }
           }, 1000);
         } else {
-          card.classList.remove('emergency-glow', 'border-red-500', 'bg-red-50');
-          statusTag.innerText = '正常';
-          statusTag.className = 'text-xs font-bold px-2 py-1 rounded bg-slate-100 text-slate-400';
-          iconBox.className = 'p-3 rounded-2xl bg-slate-50 text-slate-400';
+          card.classList.remove("emergency-glow", "border-red-500", "bg-red-50");
+          statusTag.innerText = "正常";
+          statusTag.className =
+            "rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-slate-500";
+          iconBox.className =
+            "flex h-11 w-11 items-center justify-center rounded-2xl bg-slate-50 text-slate-400";
+
           alarm.pause();
           alarm.currentTime = 0;
         }
@@ -197,36 +350,40 @@
 
     // 3. 包裹：status === 'waiting'
     onSnapshot(
-      query(collection(db, 'packages'), where('status', '==', 'waiting')),
-      s => document.getElementById('pkgCount').innerText = s.size
-    );
-
-    // 4. 訪客：status === 'pending'（集合名稱 visitor）
-    onSnapshot(
-      query(collection(db, 'visitor'), where('status', '==', 'pending')),
-      s => document.getElementById('visCount').innerText = s.size
-    );
-
-    // 5. 維修：所有「尚未完成」的都算（非 completed / 已完成）
-    onSnapshot(
-      collection(db, 'maintenance'),
-      snap => {
-        const docs = snap.docs.map(d => d.data());
-        const notDone = docs.filter(m => {
-          const s = m.status || '';
-          const isDone = (s === 'completed' || s === '已完成');
-          return !isDone;
-        });
-        document.getElementById('mntCount').innerText = notDone.length;
+      query(collection(db, "packages"), where("status", "==", "waiting")),
+      (s) => {
+        document.getElementById("pkgCount").innerText = s.size;
       }
     );
 
+    // 4. 訪客：status === 'pending'
+    onSnapshot(
+      query(collection(db, "visitor"), where("status", "==", "pending")),
+      (s) => {
+        document.getElementById("visCount").innerText = s.size;
+      }
+    );
+
+    // 5. 維修：所有「尚未完成」的都算
+    onSnapshot(collection(db, "maintenance"), (snap) => {
+      const notDone = snap.docs
+        .map((d) => d.data())
+        .filter((m) => {
+          const s = m.status || "";
+          const isDone = s === "completed" || s === "已完成";
+          return !isDone;
+        });
+
+      document.getElementById("mntCount").innerText = notDone.length;
+    });
+
     // 6. 登出
-    document.getElementById('logoutBtn').onclick = () => {
+    document.getElementById("logoutBtn").onclick = () => {
       localStorage.clear();
-      window.location.href = './login.html';
+      window.location.href = "./login.html";
     };
 
     lucide.createIcons();
   </script>
 </body>
+</html>
