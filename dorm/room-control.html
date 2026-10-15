@@ -4,391 +4,887 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>房間控制 - 智慧宿舍系統</title>
+
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
+  <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
   <style>
-    body { font-family: 'Noto Sans TC', sans-serif; }
+    body {
+      font-family: "Noto Sans TC", sans-serif;
+    }
+
+    button:disabled {
+      cursor: not-allowed;
+      opacity: 0.55;
+    }
   </style>
 </head>
+
 <body class="bg-gray-50 text-gray-900">
-
-<div id="page">
-  <div class="flex items-center justify-center min-h-screen flex-col gap-4 text-gray-400">
-    <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-    <p>載入中...</p>
+  <div id="page">
+    <div class="flex min-h-screen flex-col items-center justify-center gap-4 text-gray-400">
+      <div class="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <p>載入中...</p>
+    </div>
   </div>
-</div>
 
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-  import {
-    getFirestore,
-    doc,
-    getDoc,
-    setDoc,
-    onSnapshot
-  } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+  <script type="module">
+    import {
+      initializeApp
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
-    authDomain: "smartdorm-3ab79.firebaseapp.com",
-    projectId: "smartdorm-3ab79",
-    storageBucket: "smartdorm-3ab79.firebasestorage.app",
-    messagingSenderId: "240227925869",
-    appId: "1:240227925869:web:5a71f95a2f18bef1972464"
-  };
+    import {
+      getFirestore,
+      doc,
+      getDoc,
+      setDoc,
+      onSnapshot
+    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-  const app = initializeApp(firebaseConfig);
-  const db = getFirestore(app);
+    // =========================================================
+    // Firebase 設定
+    // =========================================================
+    const firebaseConfig = {
+      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
+      authDomain: "smartdorm-3ab79.firebaseapp.com",
+      projectId: "smartdorm-3ab79",
+      storageBucket: "smartdorm-3ab79.firebasestorage.app",
+      messagingSenderId: "240227925869",
+      appId: "1:240227925869:web:5a71f95a2f18bef1972464"
+    };
 
-  const studentId = localStorage.getItem('studentId');
-  if (!studentId) {
-    window.location.href = './login.html';
-    throw new Error('未登入');
-  }
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
 
-  const cachedUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
-  let userData = {
-    name: cachedUser?.name || '使用者',
-    room: cachedUser?.room || '—',
-    sid:  cachedUser?.studentId || studentId
-  };
+    // =========================================================
+    // 登入資料
+    // =========================================================
+    const studentId = localStorage.getItem("studentId");
 
-  let shellBuilt = false;
-
-  const defaultControl = {
-    light: false,
-    door: true,
-    ac:   true,
-    fan:  false
-  };
-
-  let controlState = { ...defaultControl };
-
-  const scenes = {
-    morning: {
-      name: '早晨模式',
-      desc: '開燈、上鎖，清爽迎接早晨',
-      icon: 'sun',
-      iconWrap: 'bg-blue-50 text-blue-600',
-      state: { light: true, door: true, ac: false, fan: false }
-    },
-    sleep: {
-      name: '睡眠模式',
-      desc: '關燈、上鎖、關冷氣，好眠',
-      icon: 'moon',
-      iconWrap: 'bg-blue-50 text-blue-600',
-      state: { light: false, door: true, ac: false, fan: false }
-    },
-    study: {
-      name: '讀書模式',
-      desc: '開燈、上鎖、開冷氣，專心學習',
-      icon: 'book-open',
-      iconWrap: 'bg-blue-50 text-blue-600',
-      state: { light: true, door: true, ac: true, fan: false }
-    },
-    relax: {
-      name: '放鬆模式',
-      desc: '開燈、解鎖、開風扇，輕鬆休息',
-      icon: 'sofa',
-      iconWrap: 'bg-blue-50 text-blue-600',
-      state: { light: true, door: false, ac: false, fan: true }
+    if (!studentId) {
+      window.location.href = "./login.html";
+      throw new Error("未登入");
     }
-  };
 
-  function initIcons() {
-    if (window.lucide) window.lucide.createIcons();
-  }
+    let cachedUser = null;
 
-  function bindLogout() {
-    document.getElementById('logoutBtn')?.addEventListener('click', () => {
-      localStorage.removeItem('studentId');
-      localStorage.removeItem('currentUser');
-      window.location.href = './login.html';
-    });
-  }
+    try {
+      cachedUser = JSON.parse(
+        localStorage.getItem("currentUser") || "null"
+      );
+    } catch (error) {
+      console.warn("登入快取格式錯誤：", error);
+    }
 
-  function switchClass(isOn, activeColor = 'bg-cyan-500') {
-    return `
-      relative inline-flex h-7 w-12 items-center rounded-full transition-colors
-      ${isOn ? activeColor : 'bg-gray-300'}
-    `;
-  }
+    let userData = {
+      name: cachedUser?.name || "使用者",
+      room: cachedUser?.room || "—",
+      sid: cachedUser?.studentId || studentId
+    };
 
-  function knobClass(isOn) {
-    return `
-      inline-block h-5 w-5 transform rounded-full bg-white transition
-      ${isOn ? 'translate-x-6' : 'translate-x-1'}
-    `;
-  }
+    // =========================================================
+    // MQTT 設定
+    // =========================================================
+    const MQTT_URL = "wss://broker.emqx.io:8084/mqtt";
+    const LIGHT_TOPIC = "smartdorm/411220413/relay3";
+    const FAN_TOPIC = "smartdorm/411220413/fan";
 
-  function deviceStatusLabel(key, value) {
-    if (key === 'door') return value ? '已上鎖' : '已解鎖';
-    if (key === 'ac')   return value ? '運轉中' : '已關閉';
-    if (key === 'fan')  return value ? '運轉中' : '已關閉';
-    return value ? '已開啟' : '已關閉';
-  }
+    // 只反轉燈光命令，不修改樹莓派、不影響風扇。
+    // true：網頁開燈發 OFF；網頁關燈發 ON。
+    // 日後若修正接線、恢復正常方向，改成 false 即可。
+    const LIGHT_COMMAND_INVERTED = true;
 
-  function renderMainContent() {
+    const MQTT_CLIENT_ID =
+      "web-411220413-" +
+      Date.now() +
+      "-" +
+      Math.random().toString(16).slice(2);
+
+    let mqttClient = null;
+    let mqttConnected = false;
+    let mqttStatusMessage = "MQTT 連線中...";
+    let firebaseStatusMessage = "Firebase 資料讀取中...";
+
+    // =========================================================
+    // 設備狀態
+    // true / false 代表網頁希望設備開啟 / 關閉，
+    // 不代表燈光 MQTT 命令 ON / OFF。
+    // =========================================================
+    const defaultControl = {
+      light: false,
+      door: true,
+      ac: true,
+      fan: false
+    };
+
+    let controlState = { ...defaultControl };
+    let shellBuilt = false;
+    let controlsBusy = false;
+    let controlsReady = false;
+
+    const scenes = {
+      morning: {
+        name: "早晨模式",
+        desc: "開燈、上鎖，清爽迎接早晨",
+        icon: "sun",
+        iconWrap: "bg-blue-50 text-blue-600",
+        state: {
+          light: true,
+          door: true,
+          ac: false,
+          fan: false
+        }
+      },
+      sleep: {
+        name: "睡眠模式",
+        desc: "關燈、上鎖、關冷氣、關風扇，好眠",
+        icon: "moon",
+        iconWrap: "bg-blue-50 text-blue-600",
+        state: {
+          light: false,
+          door: true,
+          ac: false,
+          fan: false
+        }
+      },
+      study: {
+        name: "讀書模式",
+        desc: "開燈、上鎖、開冷氣，專心學習",
+        icon: "book-open",
+        iconWrap: "bg-blue-50 text-blue-600",
+        state: {
+          light: true,
+          door: true,
+          ac: true,
+          fan: false
+        }
+      },
+      relax: {
+        name: "放鬆模式",
+        desc: "開燈、解鎖、關冷氣、開風扇，輕鬆休息",
+        icon: "sofa",
+        iconWrap: "bg-blue-50 text-blue-600",
+        state: {
+          light: true,
+          door: false,
+          ac: false,
+          fan: true
+        }
+      }
+    };
+
     const deviceCards = [
-      { key: 'light', title: '電燈',   icon: 'lightbulb', activeColor: 'bg-cyan-500' },
-      { key: 'door',  title: '門鎖',   icon: 'lock',      activeColor: 'bg-blue-500' },
-      { key: 'ac',    title: '冷氣',   icon: 'wind',      activeColor: 'bg-cyan-500' },
-      { key: 'fan',   title: '電風扇', icon: 'fan',       activeColor: 'bg-cyan-500' }
+      {
+        key: "light",
+        title: "電燈",
+        icon: "lightbulb",
+        activeColor: "bg-cyan-500"
+      },
+      {
+        key: "door",
+        title: "門鎖",
+        icon: "lock",
+        activeColor: "bg-blue-500"
+      },
+      {
+        key: "ac",
+        title: "冷氣",
+        icon: "wind",
+        activeColor: "bg-cyan-500"
+      },
+      {
+        key: "fan",
+        title: "電風扇",
+        icon: "fan",
+        activeColor: "bg-cyan-500"
+      }
     ];
 
-    return `
-      <section class="mb-10">
-        <div class="flex items-center justify-between mb-5">
-          <h3 class="text-2xl font-bold text-gray-900">情境模式</h3>
-        </div>
-        <p class="text-sm text-gray-500 mb-4">
-          可快速套用預先設定好的房間狀態，一鍵完成燈光、門鎖、冷氣與風扇的調整。
-        </p>
+    const navItems = [
+      {
+        href: "./dashboard.html",
+        icon: "layout-dashboard",
+        label: "首頁 Dashboard"
+      },
+      {
+        href: "./room-control.html",
+        icon: "home",
+        label: "房間控制",
+        active: true
+      },
+      {
+        href: "./energy.html",
+        icon: "zap",
+        label: "能源監控"
+      },
+      {
+        href: "./package.html",
+        icon: "package",
+        label: "包裹管理"
+      },
+      {
+        href: "./maintenance.html",
+        icon: "wrench",
+        label: "維修報修"
+      },
+      {
+        href: "./visitor.html",
+        icon: "users",
+        label: "訪客管理"
+      },
+      {
+        href: "./medical.html",
+        icon: "heart-pulse",
+        label: "緊急通知"
+      }
+    ];
 
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-          ${Object.entries(scenes).map(([sceneKey, scene]) => `
-            <button
-              type="button"
-              data-scene="${sceneKey}"
-              class="scene-btn text-left bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:-translate-y-0.5 transition-all">
-              <div class="flex items-start gap-4">
-                <div class="w-12 h-12 rounded-xl ${scene.iconWrap} flex items-center justify-center shrink-0">
-                  <i data-lucide="${scene.icon}" class="w-6 h-6"></i>
+    function escapeHtml(value) {
+      return String(value ?? "").replace(/[&<>"']/g, (character) => {
+        const replacements = {
+          "&": "&amp;",
+          "<": "&lt;",
+          ">": "&gt;",
+          '"': "&quot;",
+          "'": "&#39;"
+        };
+
+        return replacements[character];
+      });
+    }
+
+    function initIcons() {
+      window.lucide?.createIcons();
+    }
+
+    function getRoomKey() {
+      return userData.room && userData.room !== "—"
+        ? userData.room
+        : studentId;
+    }
+
+    function switchClass(isOn, activeColor = "bg-cyan-500") {
+      return `
+        relative inline-flex h-7 w-12 items-center rounded-full transition-colors
+        ${isOn ? activeColor : "bg-gray-300"}
+      `;
+    }
+
+    function knobClass(isOn) {
+      return `
+        inline-block h-5 w-5 transform rounded-full bg-white transition
+        ${isOn ? "translate-x-6" : "translate-x-1"}
+      `;
+    }
+
+    function deviceStatusLabel(key, value) {
+      if (key === "door") {
+        return value ? "已上鎖" : "已解鎖";
+      }
+
+      if (key === "ac" || key === "fan") {
+        return value ? "運轉中" : "已關閉";
+      }
+
+      return value ? "已開啟" : "已關閉";
+    }
+
+    function mqttStatusClass() {
+      return mqttConnected
+        ? "border-green-100 bg-green-50 text-green-700"
+        : "border-yellow-100 bg-yellow-50 text-yellow-700";
+    }
+
+    function mqttStatusIcon() {
+      return mqttConnected ? "circle-check-big" : "wifi-off";
+    }
+
+    // =========================================================
+    // MQTT 發送
+    // callback 完成只代表用戶端發送流程完成，
+    // 不代表樹莓派已回報設備實際狀態。
+    // =========================================================
+    function publishMqttCommand(topic, payload, deviceName) {
+      return new Promise((resolve, reject) => {
+        if (!mqttClient || !mqttConnected || !mqttClient.connected) {
+          reject(new Error("MQTT 尚未連線，請等待連線完成"));
+          return;
+        }
+
+        const timer = setTimeout(() => {
+          reject(new Error(`${deviceName}命令發送逾時`));
+        }, 10000);
+
+        try {
+          mqttClient.publish(
+            topic,
+            payload,
+            {
+              qos: 0,
+              retain: false
+            },
+            (error) => {
+              clearTimeout(timer);
+
+              if (error) {
+                reject(error);
+                return;
+              }
+
+              console.log(
+                `[MQTT] ${deviceName}：Topic=${topic}，Payload=${payload}`
+              );
+
+              resolve();
+            }
+          );
+        } catch (error) {
+          clearTimeout(timer);
+          reject(error);
+        }
+      });
+    }
+
+    function publishLightState(isOn) {
+      const commandOn = LIGHT_COMMAND_INVERTED ? !isOn : isOn;
+      const payload = commandOn ? "ON" : "OFF";
+
+      console.log(
+        `[燈光] 網頁設定=${isOn ? "開燈" : "關燈"}，發送=${payload}`
+      );
+
+      return publishMqttCommand(
+        LIGHT_TOPIC,
+        payload,
+        "模型燈"
+      );
+    }
+
+    function publishFanState(isOn) {
+      return publishMqttCommand(
+        FAN_TOPIC,
+        isOn ? "ON" : "OFF",
+        "風扇"
+      );
+    }
+
+    function startMqtt() {
+      if (!window.mqtt) {
+        mqttStatusMessage = "MQTT.js 載入失敗，請重新整理頁面。";
+        updateMqttStatusOnly();
+        return;
+      }
+
+      mqttClient = window.mqtt.connect(MQTT_URL, {
+        clientId: MQTT_CLIENT_ID,
+        username: "emqx",
+        password: "public",
+        clean: true,
+        reconnectPeriod: 2000,
+        connectTimeout: 10000,
+        keepalive: 60
+      });
+
+      mqttClient.on("connect", () => {
+        mqttConnected = true;
+        mqttStatusMessage =
+          "MQTT Broker 已連接，可發送燈光與風扇命令。";
+        updateMqttStatusOnly();
+      });
+
+      mqttClient.on("reconnect", () => {
+        mqttConnected = false;
+        mqttStatusMessage = "MQTT 重新連線中...";
+        updateMqttStatusOnly();
+      });
+
+      mqttClient.on("close", () => {
+        mqttConnected = false;
+        mqttStatusMessage = "MQTT 已中斷，正在嘗試重新連線。";
+        updateMqttStatusOnly();
+      });
+
+      mqttClient.on("offline", () => {
+        mqttConnected = false;
+        mqttStatusMessage = "MQTT 目前離線。";
+        updateMqttStatusOnly();
+      });
+
+      mqttClient.on("error", (error) => {
+        mqttConnected = false;
+        mqttStatusMessage = "MQTT 連線錯誤，請確認網路。";
+        console.error("MQTT 錯誤：", error);
+        updateMqttStatusOnly();
+      });
+    }
+
+    // =========================================================
+    // 介面
+    // =========================================================
+    function renderMainContent() {
+      const disabled = controlsBusy || !controlsReady;
+
+      return `
+        <section class="mb-10">
+          <div class="flex items-center justify-between mb-5">
+            <h3 class="text-2xl font-bold text-gray-900">情境模式</h3>
+          </div>
+
+          <p class="text-sm text-gray-500 mb-4">
+            可快速套用房間狀態；燈光與風扇會發送實體設備控制命令，
+            門鎖與冷氣目前僅更新網頁設定。
+          </p>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
+            ${Object.entries(scenes).map(([sceneKey, scene]) => `
+              <button
+                type="button"
+                data-scene="${sceneKey}"
+                ${disabled ? "disabled" : ""}
+                class="scene-btn text-left bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:-translate-y-0.5 transition-all"
+              >
+                <div class="flex items-start gap-4">
+                  <div class="w-12 h-12 rounded-xl ${scene.iconWrap} flex items-center justify-center shrink-0">
+                    <i data-lucide="${scene.icon}" class="w-6 h-6"></i>
+                  </div>
+
+                  <div>
+                    <h4 class="text-lg font-semibold text-gray-900 mb-2">
+                      ${scene.name}
+                    </h4>
+                    <p class="text-sm leading-6 text-gray-500">
+                      ${scene.desc}
+                    </p>
+                  </div>
+                </div>
+              </button>
+            `).join("")}
+          </div>
+        </section>
+
+        <section class="mb-8">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="text-2xl font-bold text-gray-900">設備控制</h3>
+            <span class="text-sm text-gray-500">
+              ${controlsBusy ? "操作處理中..." : ""}
+            </span>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            ${deviceCards.map((device) => `
+              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-4">
+                    <div class="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600">
+                      <i data-lucide="${device.icon}" class="w-5 h-5"></i>
+                    </div>
+
+                    <div>
+                      <h4 class="text-lg font-semibold text-gray-900">
+                        ${device.title}
+                      </h4>
+
+                      <p class="text-sm text-gray-500">
+                        ${deviceStatusLabel(device.key, controlState[device.key])}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    data-device="${device.key}"
+                    role="switch"
+                    aria-checked="${Boolean(controlState[device.key])}"
+                    aria-label="切換${device.title}"
+                    ${disabled ? "disabled" : ""}
+                    class="${switchClass(
+                      controlState[device.key],
+                      device.activeColor
+                    )}"
+                  >
+                    <span class="${knobClass(controlState[device.key])}"></span>
+                  </button>
+                </div>
+              </div>
+            `).join("")}
+          </div>
+        </section>
+
+        <div
+          id="mqtt-status-box"
+          class="rounded-2xl border px-5 py-4 text-sm ${mqttStatusClass()}"
+        >
+          <div class="flex items-center gap-2">
+            <i data-lucide="${mqttStatusIcon()}" class="w-4 h-4"></i>
+            <span>${escapeHtml(mqttStatusMessage)}</span>
+          </div>
+        </div>
+
+        <div class="mt-4 rounded-2xl border border-blue-100 bg-blue-50 px-5 py-4 text-blue-700 text-sm">
+          <div class="flex items-center gap-2">
+            <i data-lucide="database" class="w-4 h-4"></i>
+            <span>${escapeHtml(firebaseStatusMessage)}</span>
+          </div>
+        </div>
+
+        <p class="mt-4 text-xs leading-6 text-gray-500">
+          設備開關顯示最後操作設定，不是硬體回報狀態。
+          MQTT 連線成功不代表樹莓派一定在線。
+          目前模型燈使用反向命令：開燈發 OFF，關燈發 ON；風扇維持正常命令。
+        </p>
+      `;
+    }
+
+    function renderShell() {
+      shellBuilt = true;
+
+      document.getElementById("page").innerHTML = `
+        <div class="flex min-h-screen">
+          <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
+            <div class="p-6 border-b border-gray-100">
+              <a
+                href="./dashboard.html"
+                class="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 hover:bg-blue-50 transition-colors"
+              >
+                <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
+                  <i data-lucide="house" class="w-5 h-5 text-white"></i>
                 </div>
                 <div>
-                  <h4 class="text-lg font-semibold text-gray-900 mb-2">${scene.name}</h4>
-                  <p class="text-sm leading-6 text-gray-500">${scene.desc}</p>
+                  <p class="font-semibold text-gray-900 text-sm">
+                    智慧宿舍系統
+                  </p>
+                  <p class="text-xs text-gray-400">Smart Dorm</p>
                 </div>
-              </div>
-            </button>
-          `).join('')}
-        </div>
-      </section>
-
-      <section class="mb-8">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-2xl font-bold text-gray-900">設備控制</h3>
-        </div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-          ${deviceCards.map(device => `
-            <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
-              <div class="flex items-center justify-between">
-                <div class="flex items-center gap-4">
-                  <div class="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600">
-                    <i data-lucide="${device.icon}" class="w-5 h-5"></i>
-                  </div>
-                  <div>
-                    <h4 class="text-lg font-semibold text-gray-900">${device.title}</h4>
-                    <p class="text-sm text-gray-500">${deviceStatusLabel(device.key, controlState[device.key])}</p>
-                  </div>
-                </div>
-
-                <button
-                  type="button"
-                  data-device="${device.key}"
-                  class="${switchClass(controlState[device.key], device.activeColor)}">
-                  <span class="${knobClass(controlState[device.key])}"></span>
-                </button>
-              </div>
+              </a>
             </div>
-          `).join('')}
-        </div>
-      </section>
 
-      <div class="rounded-2xl border border-green-100 bg-green-50 px-5 py-4 text-green-700 text-sm">
+            <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
+              ${navItems.map((item) => `
+                <a
+                  href="${item.href}"
+                  class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${
+                    item.active
+                      ? "bg-blue-50 text-blue-600 font-medium"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }"
+                >
+                  <i data-lucide="${item.icon}" class="w-4 h-4"></i>
+                  ${item.label}
+                </a>
+              `).join("")}
+            </nav>
+
+            <div class="p-4 border-t border-gray-100">
+              <div class="flex items-center gap-3 mb-3">
+                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                  <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                  <p id="sidebar-name" class="text-sm font-medium text-gray-900 truncate">
+                    ${escapeHtml(userData.name)}
+                  </p>
+                  <p id="sidebar-room" class="text-xs text-gray-400 truncate">
+                    ${escapeHtml(userData.room)}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                id="logoutBtn"
+                class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 text-sm transition-colors"
+              >
+                <i data-lucide="log-out" class="w-4 h-4"></i>
+                登出
+              </button>
+            </div>
+          </aside>
+
+          <div class="flex-1 flex flex-col ml-64 min-h-screen">
+            <header class="bg-gray-50 border-b border-gray-200 px-6 py-5 sticky top-0 z-10">
+              <h1 class="text-xl font-bold text-gray-900">房間控制</h1>
+              <p id="header-room" class="text-lg text-gray-500 mt-1">
+                ${escapeHtml(userData.room)}｜${escapeHtml(userData.sid)}
+              </p>
+            </header>
+
+            <main id="main-content" class="p-8 max-w-[1500px] mx-auto w-full">
+              ${renderMainContent()}
+            </main>
+          </div>
+        </div>
+      `;
+
+      document.getElementById("logoutBtn").addEventListener("click", () => {
+        mqttClient?.end(true);
+        localStorage.removeItem("studentId");
+        localStorage.removeItem("currentUser");
+        window.location.href = "./login.html";
+      });
+
+      initIcons();
+      bindControls();
+    }
+
+    function updateMqttStatusOnly() {
+      const box = document.getElementById("mqtt-status-box");
+
+      if (!box) return;
+
+      box.className = `
+        rounded-2xl border px-5 py-4 text-sm ${mqttStatusClass()}
+      `;
+
+      box.innerHTML = `
         <div class="flex items-center gap-2">
-          <i data-lucide="circle-check-big" class="w-4 h-4"></i>
-          <span>Firebase 已連接，設備狀態即時同步。</span>
+          <i data-lucide="${mqttStatusIcon()}" class="w-4 h-4"></i>
+          <span>${escapeHtml(mqttStatusMessage)}</span>
         </div>
-      </div>
-    `;
-  }
+      `;
 
-  function renderShell() {
-    shellBuilt = true;
-    document.getElementById('page').innerHTML = `
-      <div class="flex min-h-screen">
-        <!-- 側邊欄 -->
-        <aside class="w-64 bg-white border-r border-gray-200 flex flex-col fixed inset-y-0 left-0 z-10">
-          <div class="p-6 border-b border-gray-100">
-            <a href="./dashboard.html"
-               class="flex items-center gap-3 rounded-lg px-2 py-1 -mx-2 hover:bg-blue-50 cursor-pointer transition-colors">
-              <div class="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center">
-                <i data-lucide="house" class="w-5 h-5 text-white"></i>
-              </div>
-              <div>
-                <p class="font-semibold text-gray-900 text-sm">智慧宿舍系統</p>
-                <p class="text-xs text-gray-400">Smart Dorm</p>
-              </div>
-            </a>
-          </div>
-
-          <nav class="flex-1 p-4 space-y-1 overflow-y-auto">
-            <a href="./dashboard.html"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-              <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 首頁 Dashboard
-            </a>
-            <a href="./room-control.html"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-blue-50 text-blue-600 text-sm font-medium">
-              <i data-lucide="home" class="w-4 h-4"></i> 房間控制
-            </a>
-            <a href="./energy.html"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-              <i data-lucide="zap" class="w-4 h-4"></i> 能源監控
-            </a>
-            <a href="./package.html"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-              <i data-lucide="package" class="w-4 h-4"></i> 包裹管理
-            </a>
-            <a href="./maintenance.html"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-              <i data-lucide="wrench" class="w-4 h-4"></i> 維修報修
-            </a>
-            <a href="./visitor.html"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-              <i data-lucide="users" class="w-4 h-4"></i> 訪客管理
-            </a>
-            <a href="./medical.html"
-               class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-600 hover:bg-gray-50 text-sm transition-colors">
-              <i data-lucide="heart-pulse" class="w-4 h-4"></i> 緊急通知
-            </a>
-          </nav>
-
-          <div class="p-4 border-t border-gray-100">
-            <div class="flex items-center gap-3 mb-3">
-              <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
-                <i data-lucide="user" class="w-4 h-4 text-blue-600"></i>
-              </div>
-              <div class="flex-1 min-w-0">
-                <p id="sidebar-name" class="text-sm font-medium text-gray-900 truncate">${userData.name}</p>
-                <p id="sidebar-room" class="text-xs text-gray-400 truncate">${userData.room}</p>
-              </div>
-            </div>
-            <button id="logoutBtn"
-              class="w-full flex items-center gap-2 px-3 py-2 rounded-lg text-gray-500 hover:bg-red-50 hover:text-red-600 text-sm transition-colors">
-              <i data-lucide="log-out" class="w-4 h-4"></i> 登出
-            </button>
-          </div>
-        </aside>
-
-        <!-- 右側主內容 -->
-        <div class="flex-1 flex flex-col ml-64 min-h-screen">
-          <header class="bg-gray-50 border-b border-gray-200 px-6 py-5 sticky top-0 z-10">
-            <h1 class="text-xl font-bold text-gray-900">房間控制</h1>
-            <p class="text-lg text-gray-500 mt-1">${userData.room}｜${userData.sid}</p>
-          </header>
-
-          <main id="main-content" class="p-8 max-w-[1500px] mx-auto w-full">
-            ${renderMainContent()}
-          </main>
-        </div>
-      </div>
-    `;
-
-    initIcons();
-    bindLogout();
-    bindControls();
-  }
-
-  function updateContent() {
-    if (!shellBuilt) {
-      renderShell();
-      return;
+      initIcons();
     }
 
-    const mainEl = document.getElementById('main-content');
-    if (mainEl) mainEl.innerHTML = renderMainContent();
+    function updateContent() {
+      if (!shellBuilt) {
+        renderShell();
+        return;
+      }
 
-    const nameEl = document.getElementById('sidebar-name');
-    const roomEl = document.getElementById('sidebar-room');
-    if (nameEl) nameEl.textContent = userData.name;
-    if (roomEl) roomEl.textContent = userData.room;
+      const mainEl = document.getElementById("main-content");
+      if (mainEl) mainEl.innerHTML = renderMainContent();
 
-    initIcons();
-    bindControls();
-  }
+      const nameEl = document.getElementById("sidebar-name");
+      const roomEl = document.getElementById("sidebar-room");
+      const headerRoomEl = document.getElementById("header-room");
 
-  async function saveControlState() {
-    const roomKey = userData.room && userData.room !== '—' ? userData.room : studentId;
-    await setDoc(doc(db, 'roomControl', roomKey), {
-      room: userData.room || '',
-      studentId,
-      ...controlState,
-      updatedAt: new Date().toISOString()
-    }, { merge: true });
-  }
+      if (nameEl) nameEl.textContent = userData.name;
+      if (roomEl) roomEl.textContent = userData.room;
 
-  function bindControls() {
-    document.querySelectorAll('[data-device]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const key = btn.dataset.device;
-        controlState[key] = !controlState[key];
-        updateContent();
-        try {
-          await saveControlState();
-        } catch (error) {
-          console.error('儲存裝置狀態失敗:', error);
+      if (headerRoomEl) {
+        headerRoomEl.textContent = `${userData.room}｜${userData.sid}`;
+      }
+
+      initIcons();
+      bindControls();
+    }
+
+    // =========================================================
+    // Firebase 儲存
+    // MQTT 已送出後，Firebase 儲存失敗不會反轉實體命令。
+    // =========================================================
+    async function saveControlState(roomKey, state) {
+      await setDoc(
+        doc(db, "roomControl", roomKey),
+        {
+          room: userData.room || "",
+          studentId,
+          light: Boolean(state.light),
+          door: Boolean(state.door),
+          ac: Boolean(state.ac),
+          fan: Boolean(state.fan),
+          updatedAt: new Date().toISOString()
+        },
+        {
+          merge: true
         }
-      });
-    });
+      );
+    }
 
-    document.querySelectorAll('[data-scene]').forEach(btn => {
-      btn.addEventListener('click', async () => {
-        const sceneKey = btn.dataset.scene;
-        controlState = { ...controlState, ...scenes[sceneKey].state };
-        updateContent();
-        try {
-          await saveControlState();
-        } catch (error) {
-          console.error('儲存情境模式失敗:', error);
-        }
-      });
-    });
-  }
-
-  renderShell();
-
-  onSnapshot(doc(db, 'users', studentId), async (snap) => {
-    if (snap.exists()) {
-      const d = snap.data();
-      userData = {
-        name: d.name || cachedUser?.name || '使用者',
-        room: d.room || cachedUser?.room || '—',
-        sid:  d.studentId || studentId
-      };
-
-      localStorage.setItem('currentUser', JSON.stringify({
-        id: studentId,
-        studentId: d.studentId || studentId,
-        name: d.name || '',
-        room: d.room || '',
-        bed: d.bed || '',
-        class: d.class || ''
-      }));
-
-      const roomKey = userData.room && userData.room !== '—' ? userData.room : studentId;
+    async function persistCurrentState(roomKey) {
       try {
-        const roomSnap = await getDoc(doc(db, 'roomControl', roomKey));
-        if (roomSnap.exists()) {
-          controlState = { ...defaultControl, ...roomSnap.data() };
-        }
+        await saveControlState(roomKey, { ...controlState });
+        firebaseStatusMessage = "Firebase 設備設定已儲存。";
       } catch (error) {
-        console.error('讀取房間控制資料失敗:', error);
-      }
+        console.error("Firebase 儲存失敗：", error);
+        firebaseStatusMessage = "Firebase 儲存失敗，設定尚未同步。";
 
-      // 更新 header 上的 room｜sid
-      const header = document.querySelector('header');
-      if (header) {
-        const p = header.querySelector('p');
-        if (p) p.textContent = `${userData.room}｜${userData.sid}`;
+        alert(
+          "操作設定已更新；若有實體命令，已嘗試發送。" +
+          "但 Firebase 儲存失敗，請檢查網路或資料庫權限。" +
+          "網頁不會自動送出相反命令。"
+        );
       }
-
-      updateContent();
     }
-  }, (error) => {
-    console.error('讀取使用者資料失敗:', error);
-  });
-</script>
+
+    // =========================================================
+    // 設備控制
+    // =========================================================
+    async function toggleDevice(key) {
+      if (controlsBusy || !controlsReady) return;
+
+      const newValue = !controlState[key];
+      const roomKey = getRoomKey();
+
+      controlsBusy = true;
+      updateContent();
+
+      try {
+        if (key === "light") {
+          await publishLightState(newValue);
+        } else if (key === "fan") {
+          await publishFanState(newValue);
+        }
+
+        controlState[key] = newValue;
+        await persistCurrentState(roomKey);
+      } catch (error) {
+        console.error("設備命令發送失敗：", error);
+
+        alert(
+          `設備命令發送失敗：${error.message}。` +
+          "若發送逾時，實體狀態可能不確定，請目視確認。"
+        );
+      } finally {
+        controlsBusy = false;
+        updateContent();
+      }
+    }
+
+    async function applyScene(sceneKey) {
+      if (controlsBusy || !controlsReady) return;
+
+      const scene = scenes[sceneKey];
+      if (!scene) return;
+
+      const targetState = { ...scene.state };
+      const roomKey = getRoomKey();
+
+      controlsBusy = true;
+      updateContent();
+
+      try {
+        // 每次套用情境都重新發送兩台設備的命令，
+        // 避免網頁舊設定與實體設備不同時跳過命令。
+        await publishLightState(targetState.light);
+        controlState.light = targetState.light;
+
+        await publishFanState(targetState.fan);
+        controlState.fan = targetState.fan;
+
+        controlState.door = targetState.door;
+        controlState.ac = targetState.ac;
+
+        await persistCurrentState(roomKey);
+      } catch (error) {
+        console.error("情境模式命令發送失敗：", error);
+
+        alert(
+          `情境模式未完整套用：${error.message}。` +
+          "已送出的命令不會自動撤回，請確認燈光與風扇狀態。"
+        );
+      } finally {
+        controlsBusy = false;
+        updateContent();
+      }
+    }
+
+    function bindControls() {
+      document.querySelectorAll("[data-device]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          toggleDevice(btn.dataset.device);
+        });
+      });
+
+      document.querySelectorAll("[data-scene]").forEach((btn) => {
+        btn.addEventListener("click", () => {
+          applyScene(btn.dataset.scene);
+        });
+      });
+    }
+
+    // =========================================================
+    // 啟動
+    // 不會在載入網頁或 MQTT 重連時自動切換設備。
+    // =========================================================
+    renderShell();
+    startMqtt();
+
+    let loadedRoomKey = null;
+    let userLoadVersion = 0;
+
+    onSnapshot(
+      doc(db, "users", studentId),
+      async (snap) => {
+        const version = ++userLoadVersion;
+
+        if (snap.exists()) {
+          const d = snap.data();
+
+          userData = {
+            name: d.name || cachedUser?.name || "使用者",
+            room: d.room || cachedUser?.room || "—",
+            sid: d.studentId || studentId
+          };
+
+          localStorage.setItem(
+            "currentUser",
+            JSON.stringify({
+              id: studentId,
+              studentId: d.studentId || studentId,
+              name: d.name || "",
+              room: d.room || "",
+              bed: d.bed || "",
+              class: d.class || ""
+            })
+          );
+        }
+
+        const roomKey = getRoomKey();
+
+        // 同一房間的使用者資料更新，不覆蓋剛完成的操作設定。
+        if (loadedRoomKey === roomKey) {
+          updateContent();
+          return;
+        }
+
+        controlsReady = false;
+        updateContent();
+
+        try {
+          const roomSnap = await getDoc(
+            doc(db, "roomControl", roomKey)
+          );
+
+          if (version !== userLoadVersion) return;
+
+          const saved = roomSnap.exists() ? roomSnap.data() : {};
+
+          controlState = {
+            light: typeof saved.light === "boolean"
+              ? saved.light : defaultControl.light,
+            door: typeof saved.door === "boolean"
+              ? saved.door : defaultControl.door,
+            ac: typeof saved.ac === "boolean"
+              ? saved.ac : defaultControl.ac,
+            fan: typeof saved.fan === "boolean"
+              ? saved.fan : defaultControl.fan
+          };
+
+          loadedRoomKey = roomKey;
+          firebaseStatusMessage = "Firebase 已讀取最後儲存的設備設定。";
+        } catch (error) {
+          if (version !== userLoadVersion) return;
+
+          console.error("讀取房間控制資料失敗：", error);
+          firebaseStatusMessage =
+            "Firebase 設定讀取失敗，目前使用預設設定。";
+        } finally {
+          if (version === userLoadVersion) {
+            controlsReady = true;
+            updateContent();
+          }
+        }
+      },
+      (error) => {
+        console.error("讀取使用者資料失敗：", error);
+        firebaseStatusMessage =
+          "使用者資料讀取失敗，目前使用登入快取資料。";
+        controlsReady = true;
+        updateContent();
+      }
+    );
+  </script>
 </body>
 </html>
