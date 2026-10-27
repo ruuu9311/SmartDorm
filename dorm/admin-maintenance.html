@@ -7,77 +7,161 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
+  <style>
+    body { font-family: 'Noto Sans TC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-100 text-slate-900">
 
-<div class="max-w-6xl mx-auto p-6">
-  <div class="flex justify-between items-center mb-8">
-    <div>
-      <h1 class="text-2xl font-bold flex items-center gap-2">
-        <i data-lucide="wrench" class="text-orange-600"></i> 維修報修管理
+<div class="min-h-screen">
+  <!-- 側邊選單 -->
+  <aside class="fixed inset-y-0 z-50 flex w-64 flex-col bg-slate-950 p-6 text-white shadow-xl">
+    <div class="mb-8 flex items-center gap-3 border-b border-slate-800 pb-5">
+      <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400">
+        <i data-lucide="shield-check" class="h-5 w-5"></i>
+      </div>
+      <div>
+        <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Smart Dormitory</p>
+        <p class="text-lg font-bold">管理端後台</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 space-y-1 text-sm">
+      <a
+        href="./admin-dashboard.html"
+        class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+      >
+        <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+        <span>數據概覽</span>
+      </a>
+
+      <a
+        href="./admin-students.html"
+        class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+      >
+        <i data-lucide="users" class="h-4 w-4"></i>
+        <span>學生名單管理</span>
+      </a>
+
+      <a
+        href="./admin-face-records.html"
+        class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+      >
+        <i data-lucide="scan-face" class="h-4 w-4"></i>
+        <span>人臉識別紀錄</span>
+      </a>
+
+      <a
+        href="./admin-package.html"
+        class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+      >
+        <i data-lucide="package" class="h-4 w-4"></i>
+        <span>包裹入庫登記</span>
+      </a>
+
+      <a
+        href="./admin-visitor.html"
+        class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+      >
+        <i data-lucide="user-plus" class="h-4 w-4"></i>
+        <span>訪客申請審核</span>
+      </a>
+
+      <a
+        href="./admin-maintenance.html"
+        aria-current="page"
+        class="flex items-center gap-3 rounded-xl bg-slate-800 px-4 py-3 font-semibold text-white ring-1 ring-slate-700"
+      >
+        <i data-lucide="wrench" class="h-4 w-4"></i>
+        <span>設備報修處理</span>
+      </a>
+
+      <a
+        href="./admin-medical.html"
+        class="flex items-center gap-3 rounded-xl px-4 py-3 text-red-400 transition hover:bg-red-900/40"
+      >
+        <i data-lucide="ambulance" class="h-4 w-4"></i>
+        <span>緊急醫療監控</span>
+      </a>
+    </nav>
+
+    <button
+      id="logoutBtn"
+      type="button"
+      class="mt-6 flex items-center gap-3 border-t border-slate-800 px-4 pt-4 text-xs text-slate-500 hover:text-red-400"
+    >
+      <i data-lucide="log-out" class="h-4 w-4"></i>
+      <span>安全登出</span>
+    </button>
+  </aside>
+
+  <!-- 主內容 -->
+  <main class="ml-64 p-6 lg:p-10">
+    <header class="mb-8">
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Maintenance Management</p>
+      <h1 class="mt-1 flex items-center gap-2 text-3xl font-bold">
+        <i data-lucide="wrench" class="h-7 w-7 text-orange-600"></i> 維修報修管理
       </h1>
-      <p class="text-slate-500 text-sm mt-1">即時接收學生報修，點擊「完成」更新狀態</p>
-    </div>
-    <a href="./admin-dashboard.html"
-       class="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
-      <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回
-    </a>
-  </div>
+      <p class="mt-2 text-sm text-slate-500">即時接收學生報修，點擊「完成」更新狀態</p>
+    </header>
 
-  <!-- 統計卡 -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-      <div>
-        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">房間報修</p>
-        <p id="roomCount" class="text-3xl font-bold text-orange-600">0</p>
+    <!-- 統計卡 -->
+    <div class="mb-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">房間報修</p>
+          <p id="roomCount" class="text-3xl font-bold text-orange-600">0</p>
+        </div>
+        <i data-lucide="home" class="h-12 w-12 text-slate-100"></i>
       </div>
-      <i data-lucide="home" class="text-slate-100 w-12 h-12"></i>
-    </div>
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-      <div>
-        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">公共區域</p>
-        <p id="publicCount" class="text-3xl font-bold text-blue-600">0</p>
+      <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">公共區域</p>
+          <p id="publicCount" class="text-3xl font-bold text-blue-600">0</p>
+        </div>
+        <i data-lucide="building-2" class="h-12 w-12 text-slate-100"></i>
       </div>
-      <i data-lucide="building-2" class="text-slate-100 w-12 h-12"></i>
-    </div>
-    <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm flex items-center justify-between">
-      <div>
-        <p class="text-slate-400 text-xs font-bold uppercase tracking-wider">已完成</p>
-        <p id="doneCount" class="text-3xl font-bold text-emerald-600">0</p>
+      <div class="flex items-center justify-between rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div>
+          <p class="text-xs font-bold uppercase tracking-wider text-slate-400">已完成</p>
+          <p id="doneCount" class="text-3xl font-bold text-emerald-600">0</p>
+        </div>
+        <i data-lucide="check-circle-2" class="h-12 w-12 text-slate-100"></i>
       </div>
-      <i data-lucide="check-circle-2" class="text-slate-100 w-12 h-12"></i>
     </div>
-  </div>
 
-  <!-- 分頁切換 -->
-  <div class="flex gap-2 mb-4">
-    <button id="tabPending" onclick="showTab('pending')"
-      class="px-4 py-2 rounded-xl text-sm font-bold bg-orange-500 text-white transition-all">
-      待處理
-    </button>
-    <button id="tabDone" onclick="showTab('done')"
-      class="px-4 py-2 rounded-xl text-sm font-bold bg-white text-slate-500 border border-slate-200 transition-all">
-      已完成
-    </button>
-  </div>
+    <!-- 分頁切換 -->
+    <div class="mb-4 flex gap-2">
+      <button id="tabPending" onclick="showTab('pending')"
+        class="rounded-xl bg-orange-500 px-4 py-2 text-sm font-bold text-white transition-all">
+        待處理
+      </button>
+      <button id="tabDone" onclick="showTab('done')"
+        class="rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-500 transition-all">
+        已完成
+      </button>
+    </div>
 
-  <!-- 列表 -->
-  <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-    <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
-      <span id="listTitle" class="font-bold text-slate-700">待處理報修</span>
-      <span id="listCount" class="text-xs text-slate-400"></span>
+    <!-- 列表 -->
+    <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b bg-slate-50 p-5">
+        <span id="listTitle" class="font-bold text-slate-700">待處理報修</span>
+        <span id="listCount" class="text-xs text-slate-400"></span>
+      </div>
+      <div id="maintenanceList" class="divide-y divide-slate-100">
+        <div class="p-20 text-center italic text-slate-300">載入中...</div>
+      </div>
     </div>
-    <div id="maintenanceList" class="divide-y divide-slate-100">
-      <div class="p-20 text-center text-slate-300 italic">載入中...</div>
-    </div>
-  </div>
+  </main>
 </div>
 
 <audio id="alarmAudio" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto"></audio>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+  import {
+    getAuth, signOut
+  } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
   import {
     getFirestore, collection, doc,
     onSnapshot, updateDoc,
@@ -94,6 +178,7 @@
   };
   const app = initializeApp(firebaseConfig);
   const db  = getFirestore(app);
+  const auth = getAuth(app);
 
   // 1. 管理員權限檢查
   if (localStorage.getItem('userRole') !== 'admin') {
@@ -259,6 +344,16 @@
       });
     } catch (err) {
       alert('更新失敗：' + err.message);
+    }
+  };
+
+  // 6. 登出（同時登出 Firebase 管理員驗證，避免人臉紀錄頁殘留登入）
+  document.getElementById('logoutBtn').onclick = async () => {
+    try {
+      await signOut(auth);
+    } finally {
+      localStorage.clear();
+      window.location.href = './login.html';
     }
   };
 

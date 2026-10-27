@@ -7,47 +7,127 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
-  <style>body { font-family: 'Noto Sans TC', sans-serif; }</style>
+  <style>
+    body { font-family: 'Noto Sans TC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
+<body class="bg-slate-100 text-slate-900">
 
-  <div class="max-w-6xl mx-auto p-6">
-    <div class="flex justify-between items-center mb-8">
-      <div>
-        <h1 class="text-2xl font-bold flex items-center gap-2">
-          <i data-lucide="user-check" class="text-purple-600"></i> 訪客申請審核
+  <div class="min-h-screen">
+    <!-- 側邊選單 -->
+    <aside class="fixed inset-y-0 z-40 flex w-64 flex-col bg-slate-950 p-6 text-white shadow-xl">
+      <div class="mb-8 flex items-center gap-3 border-b border-slate-800 pb-5">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400">
+          <i data-lucide="shield-check" class="h-5 w-5"></i>
+        </div>
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Smart Dormitory</p>
+          <p class="text-lg font-bold">管理端後台</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 space-y-1 text-sm">
+        <a
+          href="./admin-dashboard.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+          <span>數據概覽</span>
+        </a>
+
+        <a
+          href="./admin-students.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="users" class="h-4 w-4"></i>
+          <span>學生名單管理</span>
+        </a>
+
+        <a
+          href="./admin-face-records.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="scan-face" class="h-4 w-4"></i>
+          <span>人臉識別紀錄</span>
+        </a>
+
+        <a
+          href="./admin-package.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="package" class="h-4 w-4"></i>
+          <span>包裹入庫登記</span>
+        </a>
+
+        <a
+          href="./admin-visitor.html"
+          aria-current="page"
+          class="flex items-center gap-3 rounded-xl bg-slate-800 px-4 py-3 font-semibold text-white ring-1 ring-slate-700"
+        >
+          <i data-lucide="user-plus" class="h-4 w-4"></i>
+          <span>訪客申請審核</span>
+        </a>
+
+        <a
+          href="./admin-maintenance.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="wrench" class="h-4 w-4"></i>
+          <span>設備報修處理</span>
+        </a>
+
+        <a
+          href="./admin-medical.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-red-400 transition hover:bg-red-900/40"
+        >
+          <i data-lucide="ambulance" class="h-4 w-4"></i>
+          <span>緊急醫療監控</span>
+        </a>
+      </nav>
+
+      <button
+        id="logoutBtn"
+        type="button"
+        class="mt-6 flex items-center gap-3 border-t border-slate-800 px-4 pt-4 text-xs text-slate-500 hover:text-red-400"
+      >
+        <i data-lucide="log-out" class="h-4 w-4"></i>
+        <span>安全登出</span>
+      </button>
+    </aside>
+
+    <!-- 主內容 -->
+    <main class="ml-64 p-6 lg:p-10">
+      <header class="mb-8">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Visitor Approval</p>
+        <h1 class="mt-1 flex items-center gap-2 text-3xl font-bold">
+          <i data-lucide="user-check" class="h-7 w-7 text-purple-600"></i> 訪客申請審核
         </h1>
-        <p class="text-slate-500 text-sm mt-1">即時處理學生提出的訪客進入申請</p>
-      </div>
-      <a href="./admin-dashboard.html" class="flex items-center gap-2 text-slate-600 hover:text-blue-600 transition-colors">
-        <i data-lucide="arrow-left" class="w-5 h-5"></i> 返回儀表板
-      </a>
-    </div>
+        <p class="mt-2 text-sm text-slate-500">即時處理學生提出的訪客進入申請</p>
+      </header>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div class="lg:col-span-2">
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="p-5 bg-slate-50 border-b flex justify-between items-center">
-            <span class="font-bold text-slate-700">待處理申請</span>
-            <span id="pendingCount" class="bg-purple-100 text-purple-700 text-xs px-3 py-1 rounded-full font-bold">0 件</span>
-          </div>
-          <div id="pendingList" class="divide-y divide-slate-100">
-            <div class="p-20 text-center text-slate-400">正在同步申請資料...</div>
-          </div>
-        </div>
-      </div>
-
-      <div class="lg:col-span-1">
-        <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-          <div class="p-5 bg-slate-50 border-b font-bold text-slate-700">最近審核紀錄</div>
-          <div id="historyList" class="divide-y divide-slate-50 text-sm">
+      <div class="grid grid-cols-1 gap-8 xl:grid-cols-3">
+        <div class="xl:col-span-2">
+          <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="flex items-center justify-between border-b bg-slate-50 p-5">
+              <span class="font-bold text-slate-700">待處理申請</span>
+              <span id="pendingCount" class="rounded-full bg-purple-100 px-3 py-1 text-xs font-bold text-purple-700">0 件</span>
             </div>
+            <div id="pendingList" class="divide-y divide-slate-100">
+              <div class="p-20 text-center text-slate-400">正在同步申請資料...</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="xl:col-span-1">
+          <div class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div class="border-b bg-slate-50 p-5 font-bold text-slate-700">最近審核紀錄</div>
+            <div id="historyList" class="divide-y divide-slate-50 text-sm"></div>
+          </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 
-  
   <!-- 訪客詳細資料 Modal -->
   <div id="visitorModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-8 relative">
@@ -66,6 +146,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
     import { getFirestore, collection, doc, onSnapshot, updateDoc, query, where, orderBy } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
     const firebaseConfig = { 
@@ -78,6 +159,7 @@
     };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     // 1. 權限檢查
     if (localStorage.getItem('userRole') !== 'admin') window.location.href = './login.html';
@@ -113,8 +195,6 @@
                 <p class="text-sm text-slate-500">拜訪對象：${v.hostName} (房號：${v.room})</p>
               </div>
               <div class="flex gap-2 flex-wrap justify-end">
-                <button onclick='showDetail({...${JSON.stringify("__PLACEHOLDER__")}, id: "${d.id}"})' 
-                  class="hidden" id="detail-btn-${d.id}"></button>
                 <button onclick="showDetail({visitorName:'${v.visitorName}',phone:'${v.phone||""}',idLast4:'${v.idLast4||""}',hostName:'${v.hostName}',room:'${v.room}',date:'${v.date}',visitTime:'${v.visitTime}',reason:'${(v.reason||"").replace(/'/g,"")}',status:'${v.status}',auditTime:'${v.auditTime||""}',id:'${d.id}'})" class="bg-slate-100 text-slate-500 px-4 py-2 rounded-xl font-bold hover:bg-slate-200 transition-all text-sm">詳細</button>
                 <button onclick="auditVisitor('${d.id}', 'approved')" class="bg-blue-600 text-white px-5 py-2 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-100 transition-all">核准</button>
                 <button onclick="auditVisitor('${d.id}', 'rejected')" class="bg-slate-100 text-slate-500 px-5 py-2 rounded-xl font-bold hover:bg-red-50 hover:text-red-600 transition-all">拒絕</button>
@@ -127,6 +207,7 @@
           </div>
         `;
       }).join('') || '<div class="p-20 text-center text-slate-400 italic">目前沒有待審核的訪客申請</div>';
+      lucide.createIcons();
     });
 
     // 4. 監聽最近紀錄 (最近審核過的 10 筆)
@@ -155,6 +236,7 @@
           </div>
         `;
       }).join('') || '<div class="p-10 text-center text-slate-300">無歷史紀錄</div>';
+      lucide.createIcons();
     });
 
     // 5. 審核功能
@@ -167,7 +249,6 @@
         });
       }
     };
-
 
     // 顯示詳細資料 Modal
     window.showDetail = (v) => {
@@ -232,7 +313,17 @@
       if (e.target === e.currentTarget) closeModal();
     });
 
-        lucide.createIcons();
+    // 登出（同時登出 Firebase 管理員驗證）
+    document.getElementById('logoutBtn').onclick = async () => {
+      try {
+        await signOut(auth);
+      } finally {
+        localStorage.clear();
+        window.location.href = './login.html';
+      }
+    };
+
+    lucide.createIcons();
   </script>
 </body>
 </html>

@@ -8,7 +8,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
-    body { font-family: 'Noto Sans TC', sans-serif; }
+    body { font-family: 'Noto Sans TC', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
     /* 強力閃爍動畫 */
     .alert-active { animation: alert-red 0.8s infinite alternate; }
     @keyframes alert-red {
@@ -25,66 +25,148 @@
 </head>
 <body class="bg-slate-900 text-slate-100 min-h-screen">
 
-  <div class="max-w-6xl mx-auto p-6">
-    <div class="flex justify-between items-center mb-10 border-b border-slate-800 pb-6">
-      <div class="flex items-center gap-4">
-        <div class="bg-red-600 p-3 rounded-2xl shadow-lg shadow-red-900/20 pulse-icon">
-          <i data-lucide="ambulance" class="w-8 h-8 text-white"></i>
+  <div class="min-h-screen">
+    <!-- 側邊選單 -->
+    <aside class="fixed inset-y-0 z-50 flex w-64 flex-col border-r border-slate-800 bg-slate-950 p-6 text-white shadow-xl">
+      <div class="mb-8 flex items-center gap-3 border-b border-slate-800 pb-5">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400">
+          <i data-lucide="shield-check" class="h-5 w-5"></i>
         </div>
         <div>
-          <h1 class="text-3xl font-bold tracking-tight text-white">醫療緊急通報中心</h1>
-          <p class="text-slate-400 text-sm">即時監控全校舍求助訊號 (24H)</p>
+          <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Smart Dormitory</p>
+          <p class="text-lg font-bold">管理端後台</p>
         </div>
       </div>
-      <a href="./admin-dashboard.html" class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-6 py-2 rounded-xl transition-all flex items-center gap-2 border border-slate-700">
-        <i data-lucide="layout-dashboard" class="w-4 h-4"></i> 儀表板
-      </a>
-    </div>
 
-    <div id="audioNotice" class="mb-6 bg-blue-900/30 border border-blue-500/50 p-4 rounded-2xl text-blue-200 text-sm flex items-center justify-between">
-      <p class="flex items-center gap-2">
-        <i data-lucide="volume-2" class="w-4 h-4"></i> 瀏覽器音效功能檢查：請點擊右側按鈕以確保警報聲可正常播放。
-      </p>
-      <button onclick="enableAudio()" class="bg-blue-600 text-white px-4 py-1 rounded-lg text-xs font-bold hover:bg-blue-500 transition-colors">測試音效</button>
-    </div>
+      <nav class="flex-1 space-y-1 text-sm">
+        <a
+          href="./admin-dashboard.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+          <span>數據概覽</span>
+        </a>
 
-    <section class="mb-12">
-      <h2 class="text-red-500 font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
-        <span class="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> 正在發生的求助案件
-      </h2>
-      <div id="activeAlerts" class="space-y-6">
-        <div class="bg-slate-800/50 p-20 text-center rounded-3xl border border-slate-700 text-slate-500 italic">
-          目前暫無緊急求助訊號，系統持續監視中...
+        <a
+          href="./admin-students.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="users" class="h-4 w-4"></i>
+          <span>學生名單管理</span>
+        </a>
+
+        <a
+          href="./admin-face-records.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="scan-face" class="h-4 w-4"></i>
+          <span>人臉識別紀錄</span>
+        </a>
+
+        <a
+          href="./admin-package.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="package" class="h-4 w-4"></i>
+          <span>包裹入庫登記</span>
+        </a>
+
+        <a
+          href="./admin-visitor.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="user-plus" class="h-4 w-4"></i>
+          <span>訪客申請審核</span>
+        </a>
+
+        <a
+          href="./admin-maintenance.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="wrench" class="h-4 w-4"></i>
+          <span>設備報修處理</span>
+        </a>
+
+        <a
+          href="./admin-medical.html"
+          aria-current="page"
+          class="flex items-center gap-3 rounded-xl bg-red-900/40 px-4 py-3 font-semibold text-red-300 ring-1 ring-red-800/60"
+        >
+          <i data-lucide="ambulance" class="h-4 w-4"></i>
+          <span>緊急醫療監控</span>
+        </a>
+      </nav>
+
+      <button
+        id="logoutBtn"
+        type="button"
+        class="mt-6 flex items-center gap-3 border-t border-slate-800 px-4 pt-4 text-xs text-slate-500 hover:text-red-400"
+      >
+        <i data-lucide="log-out" class="h-4 w-4"></i>
+        <span>安全登出</span>
+      </button>
+    </aside>
+
+    <!-- 主內容 -->
+    <main class="ml-64 p-6 lg:p-10">
+      <div class="max-w-6xl">
+        <div class="mb-10 flex items-center gap-4 border-b border-slate-800 pb-6">
+          <div class="bg-red-600 p-3 rounded-2xl shadow-lg shadow-red-900/20 pulse-icon">
+            <i data-lucide="ambulance" class="w-8 h-8 text-white"></i>
+          </div>
+          <div>
+            <h1 class="text-3xl font-bold tracking-tight text-white">醫療緊急通報中心</h1>
+            <p class="text-slate-400 text-sm">即時監控全校舍求助訊號 (24H)</p>
+          </div>
         </div>
-      </div>
-    </section>
 
-    <section>
-      <h2 class="text-slate-400 font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
-        <i data-lucide="history" class="w-4 h-4"></i> 最近處理紀錄 (今日)
-      </h2>
-      <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl">
-        <table class="w-full text-left">
-          <thead class="bg-slate-700/50 text-slate-400 text-xs uppercase">
-            <tr>
-              <th class="p-4">通報時間</th>
-              <th class="p-4">學生資訊</th>
-              <th class="p-4">房號-床號</th>
-              <th class="p-4">處置進度</th>
-              <th class="p-4">反應時間</th>
-            </tr>
-          </thead>
-          <tbody id="historyList" class="text-sm divide-y divide-slate-700/50">
-            </tbody>
-        </table>
+        <div id="audioNotice" class="mb-6 bg-blue-900/30 border border-blue-500/50 p-4 rounded-2xl text-blue-200 text-sm flex items-center justify-between">
+          <p class="flex items-center gap-2">
+            <i data-lucide="volume-2" class="w-4 h-4"></i> 瀏覽器音效功能檢查：請點擊右側按鈕以確保警報聲可正常播放。
+          </p>
+          <button onclick="enableAudio()" class="bg-blue-600 text-white px-4 py-1 rounded-lg text-xs font-bold hover:bg-blue-500 transition-colors">測試音效</button>
+        </div>
+
+        <section class="mb-12">
+          <h2 class="text-red-500 font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
+            <span class="w-2 h-2 bg-red-500 rounded-full animate-ping"></span> 正在發生的求助案件
+          </h2>
+          <div id="activeAlerts" class="space-y-6">
+            <div class="bg-slate-800/50 p-20 text-center rounded-3xl border border-slate-700 text-slate-500 italic">
+              目前暫無緊急求助訊號，系統持續監視中...
+            </div>
+          </div>
+        </section>
+
+        <section>
+          <h2 class="text-slate-400 font-bold mb-4 flex items-center gap-2 uppercase tracking-widest text-sm">
+            <i data-lucide="history" class="w-4 h-4"></i> 最近處理紀錄 (今日)
+          </h2>
+          <div class="bg-slate-800 rounded-3xl border border-slate-700 overflow-hidden shadow-2xl">
+            <table class="w-full text-left">
+              <thead class="bg-slate-700/50 text-slate-400 text-xs uppercase">
+                <tr>
+                  <th class="p-4">通報時間</th>
+                  <th class="p-4">學生資訊</th>
+                  <th class="p-4">房號-床號</th>
+                  <th class="p-4">處置進度</th>
+                  <th class="p-4">反應時間</th>
+                </tr>
+              </thead>
+              <tbody id="historyList" class="text-sm divide-y divide-slate-700/50">
+              </tbody>
+            </table>
+          </div>
+        </section>
       </div>
-    </section>
+    </main>
   </div>
 
   <audio id="alarmSound" src="https://assets.mixkit.co/active_storage/sfx/995/995-preview.mp3" preload="auto" loop></audio>
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
     import { getFirestore, collection, doc, onSnapshot, updateDoc, query, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
     const firebaseConfig = { 
@@ -97,6 +179,12 @@
     };
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
+
+    // 管理員權限檢查（與其他管理頁一致）
+    if (localStorage.getItem('userRole') !== 'admin') {
+      window.location.href = './login.html';
+    }
 
     const alarm = document.getElementById('alarmSound');
     window.enableAudio = () => {
@@ -176,6 +264,16 @@
           notes: note,
           responseTime: now.toLocaleTimeString()
         });
+      }
+    };
+
+    // 登出（同時登出 Firebase 管理員驗證）
+    document.getElementById('logoutBtn').onclick = async () => {
+      try {
+        await signOut(auth);
+      } finally {
+        localStorage.clear();
+        window.location.href = './login.html';
       }
     };
 

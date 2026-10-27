@@ -1,201 +1,198 @@
 <!doctype html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>人臉識別紀錄 - 智慧宿舍</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>人臉辨識 - 智慧宿舍</title>
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link
     rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap"
-  />
+  >
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
     body {
-      font-family: "Noto Sans TC", system-ui, -apple-system,
-        BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-family: "Noto Sans TC", system-ui, sans-serif;
     }
   </style>
 </head>
 
 <body class="bg-slate-100 text-slate-900">
-  <div class="min-h-screen">
-    <aside
-      class="fixed inset-y-0 z-50 flex w-64 flex-col bg-slate-950 p-6 text-white shadow-xl"
-    >
-      <div class="mb-8 flex items-center gap-3 border-b border-slate-800 pb-5">
-        <div
-          class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400"
-        >
-          <i data-lucide="shield-check" class="h-5 w-5"></i>
-        </div>
-        <div>
-          <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">
-            Smart Dormitory
-          </p>
-          <p class="text-lg font-bold">管理端後台</p>
-        </div>
+<div class="min-h-screen">
+
+  <!-- 側邊選單 -->
+  <aside
+    class="fixed inset-y-0 left-0 z-40 hidden w-64 flex-col
+           overflow-y-auto bg-slate-950 p-6 text-white shadow-xl md:flex"
+  >
+    <div class="mb-8 flex items-center gap-3 border-b border-slate-800 pb-5">
+      <div
+        class="flex h-10 w-10 shrink-0 items-center justify-center
+               rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400"
+      >
+        <i data-lucide="shield-check" class="h-5 w-5"></i>
       </div>
 
-      <nav class="flex-1 space-y-1 text-sm">
-        <button
-          id="backBtn"
-          type="button"
-          class="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-        >
-          <i data-lucide="arrow-left" class="h-4 w-4"></i>
-          <span>返回上一頁</span>
+      <div>
+        <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">
+          Smart Dormitory
+        </p>
+        <p class="text-lg font-bold">管理端後台</p>
+      </div>
+    </div>
+
+    <nav class="flex-1 space-y-1 text-sm">
+      <a href="./admin-dashboard.html"
+         class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+        <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+        數據概覽
+      </a>
+
+      <a href="./admin-students.html"
+         class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+        <i data-lucide="users" class="h-4 w-4"></i>
+        學生名單管理
+      </a>
+
+      <a href="./admin-face-records.html"
+         aria-current="page"
+         class="flex items-center gap-3 rounded-xl bg-slate-800 px-4 py-3 font-semibold text-white ring-1 ring-slate-700">
+        <i data-lucide="scan-face" class="h-4 w-4"></i>
+        人臉辨識
+      </a>
+
+      <a href="./admin-package.html"
+         class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+        <i data-lucide="package" class="h-4 w-4"></i>
+        包裹入庫登記
+      </a>
+
+      <a href="./admin-visitor.html"
+         class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+        <i data-lucide="user-plus" class="h-4 w-4"></i>
+        訪客申請審核
+      </a>
+
+      <a href="./admin-maintenance.html"
+         class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
+        <i data-lucide="wrench" class="h-4 w-4"></i>
+        設備報修處理
+      </a>
+
+      <a href="./admin-medical.html"
+         class="flex items-center gap-3 rounded-xl px-4 py-3 text-red-400 hover:bg-red-900/40">
+        <i data-lucide="ambulance" class="h-4 w-4"></i>
+        緊急醫療監控
+      </a>
+    </nav>
+
+    <button id="logoutBtn" type="button"
+      class="mt-6 flex items-center gap-3 border-t border-slate-800 px-4 pt-4 text-xs text-slate-500 hover:text-red-400">
+      <i data-lucide="log-out" class="h-4 w-4"></i>
+      安全登出
+    </button>
+  </aside>
+
+  <main class="p-5 md:ml-64 lg:p-10">
+
+    <!-- 小螢幕導覽 -->
+    <div class="mb-5 flex justify-between md:hidden">
+      <a href="./admin-dashboard.html" class="text-sm text-blue-600">
+        ← 返回管理首頁
+      </a>
+      <button id="mobileLogoutBtn" class="text-sm text-slate-500">
+        登出
+      </button>
+    </div>
+
+    <header class="mb-8">
+      <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
+        Face Recognition
+      </p>
+
+      <h1 class="mt-1 flex items-center gap-3 text-3xl font-bold">
+        <i data-lucide="scan-face" class="h-8 w-8 text-blue-600"></i>
+        人臉辨識
+      </h1>
+
+      <p id="dateDisplay" class="mt-2 text-sm text-slate-500"></p>
+
+      <div class="mt-3 flex items-center gap-2 text-sm">
+        <span id="connectionDot"
+          class="h-2 w-2 rounded-full bg-amber-400"></span>
+        <span id="connectionText" role="status" class="text-slate-500">
+          正在確認登入狀態…
+        </span>
+      </div>
+    </header>
+
+    <!-- Firebase 管理員驗證 -->
+    <section id="authPanel"
+      class="hidden max-w-lg rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+
+      <h2 class="mb-2 text-lg font-bold">管理員安全驗證</h2>
+      <p class="mb-6 text-sm text-slate-500">
+        請使用具有 admin 權限的 Firebase 帳號。
+      </p>
+
+      <form id="adminLoginForm" class="space-y-5">
+        <div>
+          <label for="adminEmail"
+            class="mb-2 block text-sm text-slate-600">
+            管理員 Email
+          </label>
+          <input id="adminEmail" type="email" required
+            autocomplete="username"
+            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500">
+        </div>
+
+        <div>
+          <label for="adminPassword"
+            class="mb-2 block text-sm text-slate-600">
+            密碼
+          </label>
+          <input id="adminPassword" type="password" required
+            autocomplete="current-password"
+            class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500">
+        </div>
+
+        <p id="authError" role="alert"
+          class="hidden rounded-xl bg-red-50 p-3 text-sm text-red-600"></p>
+
+        <button id="adminLoginBtn" type="submit"
+          class="w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50">
+          驗證並進入
+        </button>
+      </form>
+    </section>
+
+    <!-- 驗證後內容 -->
+    <div id="workspace" class="hidden">
+
+      <!-- 分頁 -->
+      <div class="mb-6 flex gap-2 border-b border-slate-200 pb-3"
+           role="tablist" aria-label="人臉辨識功能">
+        <button id="tabRecords" type="button"
+          role="tab" aria-selected="true"
+          aria-controls="recordsPanel"
+          class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white">
+          紀錄查詢
         </button>
 
-        <a
-          href="./admin-students.html"
-          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-        >
-          <i data-lucide="users" class="h-4 w-4"></i>
-          <span>學生名單管理</span>
-        </a>
+        <button id="tabEnroll" type="button"
+          role="tab" aria-selected="false"
+          aria-controls="enrollPanel"
+          class="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-500">
+          照片註冊
+        </button>
+      </div>
 
-        <a
-          href="./admin-face-records.html"
-          aria-current="page"
-          class="flex items-center gap-3 rounded-xl bg-slate-800 px-4 py-3 font-semibold text-white ring-1 ring-slate-700"
-        >
-          <i data-lucide="scan-face" class="h-4 w-4"></i>
-          <span>人臉識別紀錄</span>
-        </a>
+      <!-- ==================== 紀錄查詢 ==================== -->
+      <div id="recordsPanel" role="tabpanel" aria-labelledby="tabRecords">
 
-        <a
-          href="./admin-package.html"
-          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-        >
-          <i data-lucide="package" class="h-4 w-4"></i>
-          <span>包裹入庫登記</span>
-        </a>
-
-        <a
-          href="./admin-visitor.html"
-          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-        >
-          <i data-lucide="user-plus" class="h-4 w-4"></i>
-          <span>訪客申請審核</span>
-        </a>
-
-        <a
-          href="./admin-maintenance.html"
-          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
-        >
-          <i data-lucide="wrench" class="h-4 w-4"></i>
-          <span>設備報修處理</span>
-        </a>
-
-        <a
-          href="./admin-medical.html"
-          class="flex items-center gap-3 rounded-xl px-4 py-3 text-red-400 transition hover:bg-red-900/40"
-        >
-          <i data-lucide="ambulance" class="h-4 w-4"></i>
-          <span>緊急醫療監控</span>
-        </a>
-      </nav>
-
-      <button
-        id="logoutBtn"
-        type="button"
-        class="mt-6 flex items-center gap-3 border-t border-slate-800 px-4 pt-4 text-xs text-slate-500 hover:text-red-400"
-      >
-        <i data-lucide="log-out" class="h-4 w-4"></i>
-        <span>安全登出</span>
-      </button>
-    </aside>
-
-    <main class="ml-64 p-6 lg:p-10">
-      <header class="mb-8">
-        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
-          Face Recognition Records
-        </p>
-        <h1 class="mt-1 text-3xl font-bold">人臉識別紀錄</h1>
-        <p id="dateDisplay" class="mt-2 text-sm text-slate-500"></p>
-
-        <div class="mt-3 flex items-center gap-2 text-sm">
-          <span
-            id="connectionDot"
-            class="h-2 w-2 rounded-full bg-amber-400"
-          ></span>
-          <span id="connectionText" role="status" class="text-slate-500">
-            正在確認登入狀態…
-          </span>
-        </div>
-      </header>
-
-      <!-- Firebase 管理員驗證 -->
-      <section
-        id="authPanel"
-        class="hidden max-w-lg rounded-3xl border border-slate-200 bg-white p-8 shadow-sm"
-      >
-        <div class="mb-6 flex items-center gap-3">
-          <div
-            class="flex h-11 w-11 items-center justify-center rounded-2xl bg-blue-50 text-blue-600"
-          >
-            <i data-lucide="lock-keyhole" class="h-5 w-5"></i>
-          </div>
-          <div>
-            <h2 class="text-lg font-bold">管理員安全驗證</h2>
-            <p class="text-sm text-slate-500">
-              查看人臉識別紀錄需要 Firebase 管理員身分
-            </p>
-          </div>
-        </div>
-
-        <form id="adminLoginForm" class="space-y-5">
-          <div>
-            <label for="adminEmail" class="mb-2 block text-sm text-slate-600">
-              管理員 Email
-            </label>
-            <input
-              id="adminEmail"
-              type="email"
-              autocomplete="username"
-              required
-              class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div>
-            <label
-              for="adminPassword"
-              class="mb-2 block text-sm text-slate-600"
-            >
-              密碼
-            </label>
-            <input
-              id="adminPassword"
-              type="password"
-              autocomplete="current-password"
-              required
-              class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500"
-            />
-          </div>
-
-          <div
-            id="authError"
-            role="alert"
-            class="hidden rounded-xl border border-red-100 bg-red-50 p-3 text-sm font-medium text-red-600"
-          ></div>
-
-          <button
-            id="adminLoginBtn"
-            type="submit"
-            class="w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-white transition hover:bg-blue-700 disabled:opacity-60"
-          >
-            驗證並查看紀錄
-          </button>
-        </form>
-      </section>
-
-      <!-- 紀錄內容 -->
-      <div id="recordsArea" class="hidden">
-        <section class="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div class="rounded-2xl border border-slate-200 bg-white p-6">
             <p class="text-sm text-slate-500">已載入紀錄</p>
             <p id="totalCount" class="mt-2 text-3xl font-bold">—</p>
@@ -203,45 +200,37 @@
 
           <div class="rounded-2xl border border-emerald-100 bg-white p-6">
             <p class="text-sm text-slate-500">辨識通過</p>
-            <p
-              id="grantedCount"
-              class="mt-2 text-3xl font-bold text-emerald-600"
-            >
-              —
-            </p>
+            <p id="grantedCount"
+              class="mt-2 text-3xl font-bold text-emerald-600">—</p>
           </div>
 
           <div class="rounded-2xl border border-red-100 bg-white p-6">
             <p class="text-sm text-slate-500">未通過／處理異常</p>
-            <p id="otherCount" class="mt-2 text-3xl font-bold text-red-500">
-              —
-            </p>
+            <p id="otherCount"
+              class="mt-2 text-3xl font-bold text-red-500">—</p>
           </div>
         </section>
 
         <section
-          class="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 lg:flex-row lg:items-end"
-        >
+          class="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 xl:flex-row xl:items-end">
+
           <div class="flex-1">
-            <label for="searchInput" class="mb-2 block text-sm text-slate-600">
+            <label for="searchInput"
+              class="mb-2 block text-sm text-slate-600">
               搜尋識別身分或裝置
             </label>
-            <input
-              id="searchInput"
-              type="search"
-              placeholder="例如：411302825 或 dorm-entrance-01"
-              class="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-500"
-            />
+            <input id="searchInput" type="search"
+              placeholder="輸入學號或裝置名稱"
+              class="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-500">
           </div>
 
           <div>
-            <label for="statusFilter" class="mb-2 block text-sm text-slate-600">
+            <label for="statusFilter"
+              class="mb-2 block text-sm text-slate-600">
               辨識結果
             </label>
-            <select
-              id="statusFilter"
-              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 lg:w-44"
-            >
+            <select id="statusFilter"
+              class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 xl:w-44">
               <option value="all">全部結果</option>
               <option value="granted">辨識通過</option>
               <option value="denied">辨識未通過</option>
@@ -251,16 +240,13 @@
         </section>
 
         <p class="mt-3 text-xs leading-relaxed text-slate-500">
-          僅顯示最新 100 筆，統計與搜尋也只涵蓋這些紀錄。
+          僅載入最新 100 筆，統計與搜尋只涵蓋這些紀錄。
           「辨識通過」不代表門鎖已實際開啟。
         </p>
 
         <section
-          class="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white"
-        >
-          <div
-            class="flex items-center justify-between border-b border-slate-100 p-5"
-          >
+          class="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div class="flex items-center justify-between border-b p-5">
             <h2 class="font-semibold">最新識別紀錄</h2>
             <span id="visibleCount" class="text-xs text-slate-500">0 筆</span>
           </div>
@@ -278,380 +264,860 @@
                   <th class="px-5 py-4 font-medium">裝置</th>
                 </tr>
               </thead>
-              <tbody id="recordsBody" class="divide-y divide-slate-100"></tbody>
+              <tbody id="recordsBody"
+                class="divide-y divide-slate-100"></tbody>
             </table>
           </div>
         </section>
       </div>
-    </main>
-  </div>
 
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
-    import {
-      getAuth,
-      onAuthStateChanged,
-      signInWithEmailAndPassword,
-      signOut
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
-    import {
-      getFirestore,
-      collection,
-      query,
-      orderBy,
-      limit,
-      onSnapshot
-    } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
+      <!-- ==================== 照片註冊 ==================== -->
+      <div id="enrollPanel" role="tabpanel"
+           aria-labelledby="tabEnroll" class="hidden">
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
-      authDomain: "smartdorm-3ab79.firebaseapp.com",
-      projectId: "smartdorm-3ab79",
-      storageBucket: "smartdorm-3ab79.firebasestorage.app",
-      messagingSenderId: "240227925869",
-      appId: "1:240227925869:web:5a71f95a2f18bef1972464"
-    };
+        <section
+          class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
-    const $ = (id) => document.getElementById(id);
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <h2 class="text-lg font-bold">批次照片註冊</h2>
+              <p class="mt-2 text-sm leading-relaxed text-slate-500">
+                照片請以「學號.jpg」命名，每位學生選擇一張。
+                已註冊學號會跳過，不會透過本頁覆蓋原資料。
+              </p>
+            </div>
 
-    const el = {
-      authPanel: $("authPanel"),
-      recordsArea: $("recordsArea"),
-      loginForm: $("adminLoginForm"),
-      email: $("adminEmail"),
-      password: $("adminPassword"),
-      loginBtn: $("adminLoginBtn"),
-      authError: $("authError"),
-      body: $("recordsBody"),
-      search: $("searchInput"),
-      filter: $("statusFilter"),
-      total: $("totalCount"),
-      granted: $("grantedCount"),
-      other: $("otherCount"),
-      visible: $("visibleCount"),
-      connectionText: $("connectionText"),
-      connectionDot: $("connectionDot")
-    };
+            <button id="checkPiBtn" type="button"
+              class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+              檢查辨識主機
+            </button>
+          </div>
 
-    let records = [];
-    let unsubscribeRecords = null;
+          <div class="mt-5 rounded-xl bg-slate-50 p-4 text-sm">
+            <p class="break-all text-slate-600">
+              辨識主機：
+              <code id="piAddress"></code>
+            </p>
+            <p id="piStatus" role="status" class="mt-2 text-slate-500">
+              尚未檢查主機。
+            </p>
+          </div>
 
-    $("dateDisplay").textContent = new Date().toLocaleDateString("zh-TW", {
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-      weekday: "long"
-    });
+          <div
+            class="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800">
+            這個版本的樹莓派註冊 API 尚未驗證管理員身分；
+            本頁登入檢查不等於 API 權限保護。
+            請僅在受控實驗室網路使用，勿開放到網際網路。
+          </div>
 
-    // 舊後台登入狀態只負責畫面導向，不是資料庫授權
-    if (localStorage.getItem("userRole") !== "admin") {
-      window.location.replace("./login.html");
-      throw new Error("Not logged in to the admin dashboard");
-    }
+          <div class="mt-6 flex flex-wrap items-center gap-3">
+            <label
+              class="inline-flex cursor-pointer items-center gap-2 rounded-xl bg-slate-800 px-4 py-3 text-sm font-bold text-white">
+              <i data-lucide="images" class="h-4 w-4"></i>
+              選擇照片
+              <input id="photos" type="file" accept=".jpg,.jpeg"
+                multiple class="hidden">
+            </label>
 
-    const app = initializeApp(firebaseConfig);
-    const auth = getAuth(app);
-    const db = getFirestore(app);
+            <button id="startEnrollBtn" type="button" disabled
+              class="rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
+              確認批次註冊
+            </button>
 
-    function setConnection(text, color) {
-      el.connectionText.textContent = text;
-      el.connectionDot.className = `h-2 w-2 rounded-full ${color}`;
-    }
+            <button id="downloadBtn" type="button" disabled
+              class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+              下載結果 CSV
+            </button>
 
-    function stopRecordsListener() {
-      if (unsubscribeRecords) {
-        unsubscribeRecords();
-        unsubscribeRecords = null;
-      }
-    }
+            <button id="clearBtn" type="button" disabled
+              class="rounded-xl px-4 py-3 text-sm text-slate-500 hover:bg-slate-100 disabled:opacity-50">
+              清空清單
+            </button>
+          </div>
 
-    function showAuthPanel(message = "") {
-      stopRecordsListener();
-      records = [];
-      el.recordsArea.classList.add("hidden");
-      el.authPanel.classList.remove("hidden");
+          <p class="mt-3 text-xs text-slate-400">
+            範例：411220413.jpg、411220414.jpg。
+            請勿同時從其他頁面註冊、追加樣本或修改同一位學生的人臉。
+          </p>
 
-      if (message) {
-        el.authError.textContent = message;
-        el.authError.classList.remove("hidden");
-      } else {
-        el.authError.classList.add("hidden");
-      }
+          <p id="enrollSummary"
+            class="mt-5 text-sm font-medium text-slate-600">
+            尚未選擇照片。
+          </p>
 
-      setConnection("需要管理員 Email 驗證", "bg-amber-400");
-    }
+          <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
+            <div id="progressBar"
+              class="h-full w-0 bg-blue-600 transition-all"></div>
+          </div>
 
-    function showRecordsArea() {
-      el.authPanel.classList.add("hidden");
-      el.recordsArea.classList.remove("hidden");
-    }
+          <p id="enrollMessage" role="status"
+            class="mt-3 whitespace-pre-wrap text-sm text-slate-500"></p>
+        </section>
 
-    function authErrorMessage(error) {
-      switch (error.code) {
-        case "auth/invalid-email":
-          return "Email 格式不正確";
-        case "auth/invalid-credential":
-        case "auth/wrong-password":
-        case "auth/user-not-found":
-          return "Email 或密碼錯誤";
-        case "auth/too-many-requests":
-          return "嘗試次數過多，請稍後再試";
-        case "auth/network-request-failed":
-          return "網路連線失敗，請稍後再試";
-        default:
-          return error.message || "驗證失敗，請稍後再試";
-      }
-    }
+        <section
+          class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div class="border-b p-5">
+            <h2 class="font-semibold">照片註冊清單</h2>
+          </div>
 
-    function showMessage(message) {
-      el.body.replaceChildren();
+          <div class="overflow-x-auto">
+            <table class="w-full min-w-[650px] text-left text-sm">
+              <thead class="bg-slate-50 text-slate-500">
+                <tr>
+                  <th class="px-5 py-4 font-medium">照片檔名</th>
+                  <th class="px-5 py-4 font-medium">學號</th>
+                  <th class="px-5 py-4 font-medium">狀態</th>
+                  <th class="px-5 py-4 font-medium">說明</th>
+                </tr>
+              </thead>
+              <tbody id="enrollBody"
+                class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+</div>
 
-      const row = document.createElement("tr");
-      const cell = document.createElement("td");
+<script type="module">
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
 
-      cell.colSpan = 7;
-      cell.className = "px-5 py-12 text-center text-slate-500";
-      cell.textContent = message;
+import {
+  getAuth,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  signOut
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
 
-      row.appendChild(cell);
-      el.body.appendChild(row);
-    }
+import {
+  getFirestore,
+  collection,
+  query,
+  orderBy,
+  limit,
+  onSnapshot
+} from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
-    function resultType(record) {
-      if (record.ok !== true) return "error";
-      if (record.granted === true) return "granted";
-      if (record.granted === false) return "denied";
-      return "error";
-    }
+const firebaseConfig = {
+  apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
+  authDomain: "smartdorm-3ab79.firebaseapp.com",
+  projectId: "smartdorm-3ab79",
+  storageBucket: "smartdorm-3ab79.firebasestorage.app",
+  messagingSenderId: "240227925869",
+  appId: "1:240227925869:web:5a71f95a2f18bef1972464"
+};
 
-    function formatTime(value) {
-      if (!value || typeof value.toDate !== "function") return "—";
+const PI_URL = "http://192.168.0.9:5000";
+const $ = id => document.getElementById(id);
 
-      const date = value.toDate();
-      if (Number.isNaN(date.getTime())) return "—";
+if (localStorage.getItem("userRole") !== "admin") {
+  window.location.replace("./login.html");
+  throw new Error("Admin dashboard login required");
+}
 
-      return date.toLocaleString("zh-TW", {
-        timeZone: "Asia/Taipei",
-        hour12: false
-      });
-    }
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-    function formatNumber(value, digits = null) {
-      if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-      return digits === null ? String(value) : value.toFixed(digits);
-    }
+let adminVerified = false;
+let authVersion = 0;
+let records = [];
+let unsubscribeRecords = null;
+let entries = [];
+let running = false;
+let uploadController = null;
+let activeTab = "records";
 
-    function addCell(row, text) {
-      const cell = document.createElement("td");
-      cell.className = "px-5 py-4 text-slate-600";
-      cell.textContent = text;
-      row.appendChild(cell);
-      return cell;
-    }
+$("piAddress").textContent = PI_URL;
 
-    function renderRecords() {
-      const keyword = el.search.value.trim().toLowerCase();
-      const selectedStatus = el.filter.value;
+$("dateDisplay").textContent = new Date().toLocaleDateString("zh-TW", {
+  timeZone: "Asia/Taipei",
+  year: "numeric",
+  month: "long",
+  day: "numeric",
+  weekday: "long"
+});
 
-      const filtered = records.filter((record) => {
-        const searchable = [record.match ?? "", record.deviceId ?? ""]
-          .join(" ")
-          .toLowerCase();
+function icons() {
+  window.lucide?.createIcons();
+}
 
-        return (
-          searchable.includes(keyword) &&
-          (selectedStatus === "all" || resultType(record) === selectedStatus)
-        );
-      });
+function setConnection(text, color) {
+  $("connectionText").textContent = text;
+  $("connectionDot").className =
+    `h-2 w-2 rounded-full ${color}`;
+}
 
-      el.visible.textContent = `${filtered.length} 筆`;
+function stopRecordsListener() {
+  if (unsubscribeRecords) {
+    unsubscribeRecords();
+    unsubscribeRecords = null;
+  }
+}
 
-      if (filtered.length === 0) {
-        showMessage(
-          records.length === 0
-            ? "目前沒有識別紀錄；需由辨識後端寫入資料後才會顯示。"
-            : "沒有符合篩選條件的紀錄。"
-        );
-        return;
-      }
+function resetRecordDisplay() {
+  records = [];
+  $("totalCount").textContent = "—";
+  $("grantedCount").textContent = "—";
+  $("otherCount").textContent = "—";
+  $("visibleCount").textContent = "0 筆";
+  $("recordsBody").replaceChildren();
+}
 
-      const statusMap = {
-        granted: {
-          text: "辨識通過",
-          classes: "bg-emerald-100 text-emerald-700"
-        },
-        denied: {
-          text: "辨識未通過",
-          classes: "bg-red-100 text-red-700"
-        },
-        error: {
-          text: "處理異常",
-          classes: "bg-amber-100 text-amber-700"
-        }
-      };
+function showAuthPanel(message = "") {
+  adminVerified = false;
+  uploadController?.abort();
+  stopRecordsListener();
+  resetRecordDisplay();
 
-      const fragment = document.createDocumentFragment();
+  $("workspace").classList.add("hidden");
+  $("authPanel").classList.remove("hidden");
+  $("authError").textContent = message;
+  $("authError").classList.toggle("hidden", !message);
 
-      for (const record of filtered) {
-        const row = document.createElement("tr");
-        row.className = "hover:bg-slate-50";
+  setConnection("需要管理員驗證", "bg-amber-400");
+  updateEnrollButtons();
+}
 
-        addCell(row, formatTime(record.createdAt));
+function authErrorMessage(error) {
+  const messages = {
+    "auth/invalid-email": "Email 格式不正確。",
+    "auth/invalid-credential": "Email 或密碼錯誤。",
+    "auth/wrong-password": "Email 或密碼錯誤。",
+    "auth/user-not-found": "Email 或密碼錯誤。",
+    "auth/too-many-requests": "嘗試次數過多，請稍後再試。",
+    "auth/network-request-failed": "網路連線失敗。"
+  };
 
-        const identity =
-          record.match === null ||
-          record.match === undefined ||
-          record.match === ""
-            ? "未識別"
-            : String(record.match);
-        addCell(row, identity);
+  return messages[error.code] || error.message || "驗證失敗。";
+}
 
-        const type = resultType(record);
-        const statusCell = addCell(row, "");
-        const badge = document.createElement("span");
-        badge.className =
-          `rounded-full px-3 py-1 text-xs font-medium ${statusMap[type].classes}`;
-        badge.textContent = statusMap[type].text;
-        statusCell.appendChild(badge);
+function switchTab(tab) {
+  activeTab = tab;
 
-        addCell(row, formatNumber(record.score, 3));
-        addCell(row, formatNumber(record.faces));
+  for (const [name, buttonId, panelId] of [
+    ["records", "tabRecords", "recordsPanel"],
+    ["enroll", "tabEnroll", "enrollPanel"]
+  ]) {
+    const selected = tab === name;
 
-        const duration = formatNumber(record.ms);
-        addCell(row, duration === "—" ? duration : `${duration} ms`);
+    $(buttonId).className = selected
+      ? "rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white"
+      : "rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-500";
 
-        addCell(row, String(record.deviceId ?? "未指定"));
+    $(buttonId).setAttribute("aria-selected", String(selected));
+    $(panelId).classList.toggle("hidden", !selected);
+  }
+}
 
-        fragment.appendChild(row);
-      }
+$("tabRecords").addEventListener("click", () => switchTab("records"));
+$("tabEnroll").addEventListener("click", () => switchTab("enroll"));
 
-      el.body.replaceChildren(fragment);
-    }
+// ==================== 紀錄查詢 ====================
 
-    function startRecordsListener() {
-      stopRecordsListener();
-      showRecordsArea();
-      showMessage("正在載入…");
+function showRecordMessage(message) {
+  const tr = document.createElement("tr");
+  const td = document.createElement("td");
 
-      const recordsQuery = query(
-        collection(db, "face_records"),
-        orderBy("createdAt", "desc"),
-        limit(100)
+  td.colSpan = 7;
+  td.className = "px-5 py-12 text-center text-slate-500";
+  td.textContent = message;
+
+  tr.appendChild(td);
+  $("recordsBody").replaceChildren(tr);
+}
+
+function resultType(record) {
+  if (record.ok !== true) return "error";
+  if (record.granted === true) return "granted";
+  if (record.granted === false) return "denied";
+  return "error";
+}
+
+function formatTime(value) {
+  if (!value || typeof value.toDate !== "function") return "—";
+
+  const date = value.toDate();
+  if (Number.isNaN(date.getTime())) return "—";
+
+  return date.toLocaleString("zh-TW", {
+    timeZone: "Asia/Taipei",
+    hour12: false
+  });
+}
+
+function formatNumber(value, digits = null) {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
+  return digits === null ? String(value) : value.toFixed(digits);
+}
+
+function addCell(row, text, classes = "px-5 py-4 text-slate-600") {
+  const td = document.createElement("td");
+  td.className = classes;
+  td.textContent = String(text);
+  row.appendChild(td);
+  return td;
+}
+
+function renderRecords() {
+  const keyword = $("searchInput").value.trim().toLowerCase();
+  const selectedStatus = $("statusFilter").value;
+
+  const filtered = records.filter(record => {
+    const searchable = [record.match ?? "", record.deviceId ?? ""]
+      .join(" ")
+      .toLowerCase();
+
+    return searchable.includes(keyword) &&
+      (selectedStatus === "all" ||
+       resultType(record) === selectedStatus);
+  });
+
+  $("visibleCount").textContent = `${filtered.length} 筆`;
+
+  if (!filtered.length) {
+    showRecordMessage(
+      records.length
+        ? "沒有符合篩選條件的紀錄。"
+        : "目前沒有識別紀錄。"
+    );
+    return;
+  }
+
+  const statuses = {
+    granted: ["辨識通過", "bg-emerald-100 text-emerald-700"],
+    denied: ["辨識未通過", "bg-red-100 text-red-700"],
+    error: ["處理異常", "bg-amber-100 text-amber-700"]
+  };
+
+  const fragment = document.createDocumentFragment();
+
+  for (const record of filtered) {
+    const row = document.createElement("tr");
+    row.className = "hover:bg-slate-50";
+
+    addCell(row, formatTime(record.createdAt));
+    addCell(
+      row,
+      record.match === null ||
+      record.match === undefined ||
+      record.match === ""
+        ? "未識別"
+        : record.match
+    );
+
+    const statusCell = addCell(row, "");
+    const [label, classes] = statuses[resultType(record)];
+    const badge = document.createElement("span");
+
+    badge.textContent = label;
+    badge.className =
+      `rounded-full px-3 py-1 text-xs font-medium ${classes}`;
+
+    statusCell.appendChild(badge);
+
+    addCell(row, formatNumber(record.score, 3));
+    addCell(row, formatNumber(record.faces));
+
+    const duration = formatNumber(record.ms);
+    addCell(row, duration === "—" ? duration : `${duration} ms`);
+    addCell(row, record.deviceId ?? "未指定");
+
+    fragment.appendChild(row);
+  }
+
+  $("recordsBody").replaceChildren(fragment);
+}
+
+function startRecordsListener() {
+  stopRecordsListener();
+  showRecordMessage("正在載入…");
+
+  const recordsQuery = query(
+    collection(db, "face_records"),
+    orderBy("createdAt", "desc"),
+    limit(100)
+  );
+
+  unsubscribeRecords = onSnapshot(
+    recordsQuery,
+    { includeMetadataChanges: true },
+    snapshot => {
+      records = snapshot.docs.map(docSnap => ({
+        ...docSnap.data(),
+        id: docSnap.id
+      }));
+
+      const granted = records.filter(
+        record => resultType(record) === "granted"
+      ).length;
+
+      $("totalCount").textContent = String(records.length);
+      $("grantedCount").textContent = String(granted);
+      $("otherCount").textContent = String(records.length - granted);
+
+      setConnection(
+        snapshot.metadata.fromCache
+          ? "目前顯示快取，等待伺服器同步"
+          : "管理員已驗證，識別紀錄已同步",
+        snapshot.metadata.fromCache
+          ? "bg-amber-400"
+          : "bg-emerald-400"
       );
 
-      unsubscribeRecords = onSnapshot(
-        recordsQuery,
-        (snapshot) => {
-          records = snapshot.docs.map((docSnap) => ({
-            ...docSnap.data(),
-            id: docSnap.id
-          }));
+      renderRecords();
+    },
+    error => {
+      console.error(error);
+      resetRecordDisplay();
+      setConnection("管理員已驗證，但紀錄讀取失敗", "bg-red-500");
+      showRecordMessage(
+        `無法讀取紀錄（${error.code || "unknown"}），請確認 Firestore 規則。`
+      );
+    }
+  );
+}
 
-          const grantedCount = records.filter(
-            (record) => resultType(record) === "granted"
-          ).length;
+$("searchInput").addEventListener("input", renderRecords);
+$("statusFilter").addEventListener("change", renderRecords);
 
-          el.total.textContent = String(records.length);
-          el.granted.textContent = String(grantedCount);
-          el.other.textContent = String(records.length - grantedCount);
+// ==================== 照片註冊 ====================
 
-          setConnection(
-            snapshot.metadata.fromCache
-              ? "目前顯示本機快取，等待伺服器同步"
-              : "識別紀錄已同步",
-            snapshot.metadata.fromCache ? "bg-amber-400" : "bg-emerald-400"
-          );
+async function requestJson(
+  path,
+  options = {},
+  timeoutMs = 60000,
+  controller = new AbortController()
+) {
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-          renderRecords();
-        },
-        (error) => {
-          console.error("讀取識別紀錄失敗：", error);
+  try {
+    const response = await fetch(PI_URL + path, {
+      ...options,
+      signal: controller.signal,
+      cache: "no-store"
+    });
 
-          records = [];
-          el.total.textContent = "—";
-          el.granted.textContent = "—";
-          el.other.textContent = "—";
-          el.visible.textContent = "—";
+    const text = await response.text();
+    let data;
 
-          setConnection("紀錄讀取失敗", "bg-red-500");
-          showMessage(
-            `無法讀取紀錄（${error.code ?? "unknown"}），請確認管理員權限與 Firestore 規則。`
-          );
-        }
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(
+        `主機未回傳 JSON（HTTP ${response.status}），請確認 app.py。`
       );
     }
 
-    async function verifyAdminAndLoad(user) {
-      try {
-        // true = 強制取得最新 token，才能讀到剛設定的 admin claim
-        const tokenResult = await user.getIdTokenResult(true);
+    return { response, data };
+  } finally {
+    clearTimeout(timer);
+  }
+}
 
-        if (tokenResult.claims.admin !== true) {
-          await signOut(auth);
-          showAuthPanel("此帳號沒有管理員權限，請改用有 admin 權限的帳號。");
-          return;
-        }
+function updateEnrollButtons() {
+  $("photos").disabled = running || !adminVerified;
+  $("startEnrollBtn").disabled =
+    running || !adminVerified ||
+    !entries.some(entry => entry.status === "待處理");
 
-        startRecordsListener();
-      } catch (error) {
-        console.error("管理員驗證失敗：", error);
-        showAuthPanel(authErrorMessage(error));
-      }
+  $("downloadBtn").disabled = running || !entries.length;
+  $("clearBtn").disabled = running || !entries.length;
+  $("checkPiBtn").disabled = running || !adminVerified;
+}
+
+function renderEnroll() {
+  const fragment = document.createDocumentFragment();
+
+  if (!entries.length) {
+    const row = document.createElement("tr");
+    const td = addCell(row, "尚未選擇照片。");
+    td.colSpan = 4;
+    td.className = "px-5 py-12 text-center text-slate-400";
+    fragment.appendChild(row);
+  }
+
+  const colors = {
+    "成功": "text-emerald-600",
+    "失敗": "text-red-600",
+    "結果待確認": "text-red-600",
+    "檔名錯誤": "text-red-600",
+    "重複學號": "text-amber-600",
+    "已註冊，跳過": "text-amber-600",
+    "待處理": "text-slate-500",
+    "查詢中": "text-blue-600",
+    "上傳中": "text-blue-600"
+  };
+
+  for (const entry of entries) {
+    const row = document.createElement("tr");
+    row.className = "hover:bg-slate-50";
+
+    addCell(row, entry.file.name, "break-all px-5 py-4 text-slate-600");
+    addCell(row, entry.sid || "—", "px-5 py-4 font-mono text-blue-600");
+    addCell(
+      row,
+      entry.status,
+      `whitespace-nowrap px-5 py-4 font-medium ${colors[entry.status] || ""}`
+    );
+    addCell(row, entry.detail, "px-5 py-4 text-slate-500");
+
+    fragment.appendChild(row);
+  }
+
+  $("enrollBody").replaceChildren(fragment);
+
+  const count = status =>
+    entries.filter(entry => entry.status === status).length;
+
+  $("enrollSummary").textContent = entries.length
+    ? `共 ${entries.length} 張｜成功 ${count("成功")}｜已註冊跳過 ${count("已註冊，跳過")}｜失敗 ${count("失敗")}｜待確認 ${count("結果待確認")}`
+    : "尚未選擇照片。";
+
+  const completed = entries.filter(entry =>
+    !["待處理", "查詢中", "上傳中"].includes(entry.status)
+  ).length;
+
+  $("progressBar").style.width =
+    `${entries.length ? completed / entries.length * 100 : 0}%`;
+
+  updateEnrollButtons();
+}
+
+$("photos").addEventListener("change", event => {
+  if (running || !adminVerified) return;
+
+  const seen = new Set();
+
+  entries = Array.from(event.target.files || []).map(file => {
+    const match = /^([0-9]{1,32})\.jpe?g$/i.exec(file.name);
+    const sid = match ? match[1] : "";
+    let status = "待處理";
+    let detail = "";
+
+    if (!match) {
+      status = "檔名錯誤";
+      detail = "請使用純數字學號.jpg，例如 411220413.jpg。";
+    } else if (seen.has(sid)) {
+      status = "重複學號";
+      detail = "本次已選取相同學號，每位學生只處理一張。";
+    } else if (!file.size) {
+      status = "失敗";
+      detail = "照片檔案是空的。";
+    } else {
+      seen.add(sid);
     }
 
-    el.loginForm.addEventListener("submit", async (event) => {
-      event.preventDefault();
+    return { file, sid, status, detail };
+  });
 
-      el.authError.classList.add("hidden");
-      el.loginBtn.disabled = true;
-      el.loginBtn.textContent = "驗證中…";
+  $("enrollMessage").textContent = "";
+  renderEnroll();
+});
+
+$("clearBtn").addEventListener("click", () => {
+  if (running) return;
+
+  entries = [];
+  $("photos").value = "";
+  $("enrollMessage").textContent = "";
+  renderEnroll();
+});
+
+function describeEnrollError(data) {
+  if (data.error === "need exactly one face") {
+    return `照片需剛好一張人臉，目前偵測到 ${data.faces ?? "未知"} 張。`;
+  }
+
+  if (data.error === "cannot decode image") {
+    return "無法讀取照片，請換一張有效的 JPG/JPEG。";
+  }
+
+  return data.error || "請查看樹莓派服務紀錄。";
+}
+
+$("checkPiBtn").addEventListener("click", async () => {
+  if (!adminVerified) return;
+
+  $("checkPiBtn").disabled = true;
+  $("piStatus").textContent = "正在檢查…";
+
+  try {
+    const { response, data } = await requestJson(
+      "/enroll/status?name=CONNECTION_CHECK_ONLY",
+      {},
+      10000
+    );
+
+    if (!response.ok || data.ok !== true ||
+        typeof data.enrolled !== "boolean") {
+      throw new Error(data.error || `HTTP ${response.status}`);
+    }
+
+    $("piStatus").className = "mt-2 text-emerald-600";
+    $("piStatus").textContent = "主機連線正常，註冊狀態查詢可用。";
+  } catch (error) {
+    $("piStatus").className = "mt-2 text-red-600";
+    $("piStatus").textContent =
+      "連線失敗：請檢查實驗室網路、服務及 CORS。" +
+      `（${error.message}）`;
+  } finally {
+    updateEnrollButtons();
+  }
+});
+
+$("startEnrollBtn").addEventListener("click", async () => {
+  if (running || !adminVerified) return;
+
+  const pending = entries.filter(entry => entry.status === "待處理");
+  if (!pending.length) return;
+
+  if (!confirm(
+    `即將處理 ${pending.length} 張照片。\n` +
+    "已註冊學號會跳過，請勿同時從其他頁面修改人臉。"
+  )) return;
+
+  running = true;
+  let stopped = false;
+  $("enrollMessage").textContent = "正在處理，請勿關閉頁面。";
+  updateEnrollButtons();
+
+  try {
+    for (const entry of pending) {
+      if (!adminVerified) {
+        stopped = true;
+        break;
+      }
+
+      entry.status = "查詢中";
+      renderEnroll();
 
       try {
-        await signInWithEmailAndPassword(
-          auth,
-          el.email.value.trim(),
-          el.password.value
+        uploadController = new AbortController();
+
+        const { response, data } = await requestJson(
+          "/enroll/status?name=" + encodeURIComponent(entry.sid),
+          {},
+          15000,
+          uploadController
         );
-        el.password.value = "";
-        // 後續由 onAuthStateChanged 處理
+
+        if (!response.ok || data.ok !== true ||
+            typeof data.enrolled !== "boolean") {
+          throw new Error(
+            data.error || "請確認後端已新增 /enroll/status。"
+          );
+        }
+
+        if (data.enrolled) {
+          entry.status = "已註冊，跳過";
+          entry.detail = `保留原資料；樣本數 ${data.samples ?? "未提供"}。`;
+          renderEnroll();
+          continue;
+        }
       } catch (error) {
-        el.authError.textContent = authErrorMessage(error);
-        el.authError.classList.remove("hidden");
-      } finally {
-        el.loginBtn.disabled = false;
-        el.loginBtn.textContent = "驗證並查看紀錄";
-      }
-    });
-
-    onAuthStateChanged(auth, (user) => {
-      if (!user) {
-        showAuthPanel();
-        return;
+        entry.status = "失敗";
+        entry.detail = "查詢狀態失敗：" + error.message;
+        $("enrollMessage").textContent =
+          "狀態查詢失敗，已停止後續處理。";
+        stopped = true;
+        break;
       }
 
-      setConnection("正在確認管理員權限…", "bg-amber-400");
-      verifyAdminAndLoad(user);
-    });
+      if (!adminVerified) {
+        entry.status = "待處理";
+        stopped = true;
+        break;
+      }
 
-    el.search.addEventListener("input", renderRecords);
-    el.filter.addEventListener("change", renderRecords);
+      entry.status = "上傳中";
+      renderEnroll();
 
-    $("backBtn").onclick = () => window.history.back();
-
-    $("logoutBtn").onclick = async () => {
-      stopRecordsListener();
+      const form = new FormData();
+      form.append("name", entry.sid);
+      form.append("image", entry.file, entry.sid + ".jpg");
 
       try {
-        await signOut(auth);
-      } finally {
-        localStorage.clear();
-        window.location.href = "./login.html";
+        uploadController = new AbortController();
+
+        const { response, data } = await requestJson(
+          "/enroll",
+          { method: "POST", body: form },
+          60000,
+          uploadController
+        );
+
+        if (response.ok && data.ok === true) {
+          entry.status = "成功";
+          entry.detail = `註冊完成；樣本數 ${data.samples ?? "未提供"}。`;
+        } else if (
+          response.status === 409 ||
+          data.error === "already_enrolled"
+        ) {
+          entry.status = "已註冊，跳過";
+          entry.detail = "後端拒絕重複註冊。";
+        } else {
+          entry.status = "失敗";
+          entry.detail = describeEnrollError(data);
+        }
+      } catch (error) {
+        entry.status = "結果待確認";
+        entry.detail =
+          "未取得明確回應，可能已寫入。請先查狀態，不要直接重傳。";
+        $("enrollMessage").textContent =
+          "上傳回應異常，已停止後續處理。請下載結果並查看樹莓派紀錄。";
+        stopped = true;
+        break;
       }
-    };
 
-    window.addEventListener("pagehide", stopRecordsListener, { once: true });
+      renderEnroll();
+      await new Promise(resolve => setTimeout(resolve, 500));
+    }
+  } finally {
+    uploadController = null;
+    running = false;
 
-    lucide.createIcons();
-  </script>
+    if (!stopped) {
+      $("enrollMessage").textContent =
+        "處理完成。請查看各筆結果，並下載 CSV 留存。";
+    }
+
+    renderEnroll();
+  }
+});
+
+$("downloadBtn").addEventListener("click", () => {
+  if (running || !entries.length) return;
+
+  function csvCell(value) {
+    let text = String(value ?? "");
+    if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
+    return '"' + text.replaceAll('"', '""') + '"';
+  }
+
+  const rows = [
+    ["照片檔名", "學號", "狀態", "說明"],
+    ...entries.map(entry => [
+      entry.file.name,
+      entry.sid,
+      entry.status,
+      entry.detail
+    ])
+  ];
+
+  const csv = "\uFEFF" +
+    rows.map(row => row.map(csvCell).join(",")).join("\r\n");
+
+  const url = URL.createObjectURL(
+    new Blob([csv], { type: "text/csv;charset=utf-8;" })
+  );
+
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = "人臉照片註冊結果.csv";
+  link.click();
+
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+});
+
+// ==================== 登入與登出 ====================
+
+$("adminLoginForm").addEventListener("submit", async event => {
+  event.preventDefault();
+
+  $("authError").classList.add("hidden");
+  $("adminLoginBtn").disabled = true;
+  $("adminLoginBtn").textContent = "驗證中…";
+
+  try {
+    await signInWithEmailAndPassword(
+      auth,
+      $("adminEmail").value.trim(),
+      $("adminPassword").value
+    );
+    $("adminPassword").value = "";
+  } catch (error) {
+    $("authError").textContent = authErrorMessage(error);
+    $("authError").classList.remove("hidden");
+  } finally {
+    $("adminLoginBtn").disabled = false;
+    $("adminLoginBtn").textContent = "驗證並進入";
+  }
+});
+
+onAuthStateChanged(auth, async user => {
+  const version = ++authVersion;
+  showAuthPanel();
+
+  if (!user) return;
+
+  setConnection("正在確認管理員權限…", "bg-amber-400");
+
+  try {
+    const tokenResult = await user.getIdTokenResult(true);
+
+    if (version !== authVersion ||
+        auth.currentUser?.uid !== user.uid) return;
+
+    if (tokenResult.claims.admin !== true) {
+      showAuthPanel("此帳號沒有 admin 管理員權限。");
+      return;
+    }
+
+    adminVerified = true;
+    $("authPanel").classList.add("hidden");
+    $("workspace").classList.remove("hidden");
+
+    switchTab(activeTab);
+    updateEnrollButtons();
+    startRecordsListener();
+  } catch (error) {
+    if (version === authVersion) {
+      showAuthPanel(authErrorMessage(error));
+    }
+  }
+});
+
+async function logout() {
+  if (running && !confirm(
+    "照片正在處理。離開可能無法取得最後一筆結果，確定要登出？"
+  )) return;
+
+  uploadController?.abort();
+  stopRecordsListener();
+
+  try {
+    await signOut(auth);
+    localStorage.removeItem("userRole");
+    window.location.replace("./login.html");
+  } catch (error) {
+    alert("登出失敗：" + error.message);
+  }
+}
+
+$("logoutBtn").addEventListener("click", logout);
+$("mobileLogoutBtn").addEventListener("click", logout);
+
+window.addEventListener("beforeunload", event => {
+  if (!running) return;
+  event.preventDefault();
+  event.returnValue = "";
+});
+
+window.addEventListener("pagehide", () => {
+  stopRecordsListener();
+  uploadController?.abort();
+});
+
+window.addEventListener("pageshow", event => {
+  if (event.persisted && adminVerified) startRecordsListener();
+});
+
+renderEnroll();
+icons();
+</script>
 </body>
 </html>

@@ -20,269 +20,345 @@
     }
   </style>
 </head>
-<body class="bg-slate-50 text-slate-900">
-  <div class="mx-auto max-w-7xl p-6">
-    <!-- 頁首 -->
-    <header class="mb-8 flex items-center justify-between">
-      <div>
-        <h1 class="flex items-center gap-2 text-2xl font-bold">
-          <i data-lucide="users" class="text-blue-600"></i>
+<body class="bg-slate-100 text-slate-900">
+  <div class="min-h-screen">
+    <!-- 側邊選單 -->
+    <aside class="fixed inset-y-0 z-40 flex w-64 flex-col bg-slate-950 p-6 text-white shadow-xl">
+      <div class="mb-8 flex items-center gap-3 border-b border-slate-800 pb-5">
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-tr from-blue-500 to-cyan-400">
+          <i data-lucide="shield-check" class="h-5 w-5"></i>
+        </div>
+        <div>
+          <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">Smart Dormitory</p>
+          <p class="text-lg font-bold">管理端後台</p>
+        </div>
+      </div>
+
+      <nav class="flex-1 space-y-1 text-sm">
+        <a
+          href="./admin-dashboard.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="layout-dashboard" class="h-4 w-4"></i>
+          <span>數據概覽</span>
+        </a>
+
+        <a
+          href="./admin-students.html"
+          aria-current="page"
+          class="flex items-center gap-3 rounded-xl bg-slate-800 px-4 py-3 font-semibold text-white ring-1 ring-slate-700"
+        >
+          <i data-lucide="users" class="h-4 w-4"></i>
+          <span>學生名單管理</span>
+        </a>
+
+        <a
+          href="./admin-face-records.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="scan-face" class="h-4 w-4"></i>
+          <span>人臉識別紀錄</span>
+        </a>
+
+        <a
+          href="./admin-package.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="package" class="h-4 w-4"></i>
+          <span>包裹入庫登記</span>
+        </a>
+
+        <a
+          href="./admin-visitor.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="user-plus" class="h-4 w-4"></i>
+          <span>訪客申請審核</span>
+        </a>
+
+        <a
+          href="./admin-maintenance.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 transition hover:bg-slate-800 hover:text-white"
+        >
+          <i data-lucide="wrench" class="h-4 w-4"></i>
+          <span>設備報修處理</span>
+        </a>
+
+        <a
+          href="./admin-medical.html"
+          class="flex items-center gap-3 rounded-xl px-4 py-3 text-red-400 transition hover:bg-red-900/40"
+        >
+          <i data-lucide="ambulance" class="h-4 w-4"></i>
+          <span>緊急醫療監控</span>
+        </a>
+      </nav>
+
+      <button
+        id="logoutBtn"
+        type="button"
+        class="mt-6 flex items-center gap-3 border-t border-slate-800 px-4 pt-4 text-xs text-slate-500 hover:text-red-400"
+      >
+        <i data-lucide="log-out" class="h-4 w-4"></i>
+        <span>安全登出</span>
+      </button>
+    </aside>
+
+    <!-- 主內容 -->
+    <main class="ml-64 p-6 lg:p-10">
+      <!-- 頁首 -->
+      <header class="mb-8">
+        <p class="text-xs uppercase tracking-[0.2em] text-slate-400">Student Management</p>
+        <h1 class="mt-1 flex items-center gap-2 text-3xl font-bold">
+          <i data-lucide="users" class="h-7 w-7 text-blue-600"></i>
           <span>學生名單管理</span>
         </h1>
-        <p class="mt-1 text-sm text-slate-500">管理宿舍成員資料與登入帳號</p>
-      </div>
-      <a
-        href="./admin-dashboard.html"
-        class="flex items-center gap-2 text-slate-600 transition-colors hover:text-blue-600"
-      >
-        <i data-lucide="arrow-left" class="h-5 w-5"></i>
-        <span>返回儀表板</span>
-      </a>
-    </header>
+        <p class="mt-2 text-sm text-slate-500">管理宿舍成員資料與登入帳號</p>
+      </header>
 
-    <!-- 單筆新增 / 編輯 -->
-    <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <div class="mb-4 flex items-center justify-between">
-        <h2 class="flex items-center gap-2 text-lg font-bold text-slate-700">
-          <i data-lucide="user-plus" class="h-5 w-5"></i>
-          <span id="formTitle">輸入新學生</span>
-        </h2>
-        <button
-          id="cancelEditBtn"
-          type="button"
-          class="hidden rounded-lg border border-slate-300 px-3 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-50"
+      <!-- 單筆新增 / 編輯 -->
+      <section class="mb-6 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <div class="mb-4 flex items-center justify-between">
+          <h2 class="flex items-center gap-2 text-lg font-bold text-slate-700">
+            <i data-lucide="user-plus" class="h-5 w-5"></i>
+            <span id="formTitle">輸入新學生</span>
+          </h2>
+          <button
+            id="cancelEditBtn"
+            type="button"
+            class="hidden rounded-lg border border-slate-300 px-3 py-1 text-xs text-slate-500 transition-colors hover:bg-slate-50"
+          >
+            取消編輯
+          </button>
+        </div>
+
+        <form
+          id="studentForm"
+          class="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-6"
         >
-          取消編輯
-        </button>
-      </div>
+          <div class="space-y-1">
+            <label class="ml-1 text-xs font-bold text-slate-400">系級</label>
+            <input
+              id="sClass"
+              type="text"
+              required
+              placeholder="例如：資管三B"
+              class="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-      <form
-        id="studentForm"
-        class="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-6"
-      >
-        <div class="space-y-1">
-          <label class="ml-1 text-xs font-bold text-slate-400">系級</label>
-          <input
-            id="sClass"
-            type="text"
-            required
-            placeholder="例如：資管三B"
-            class="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+          <div class="space-y-1">
+            <label class="ml-1 text-xs font-bold text-slate-400">
+              學號（登入帳號）
+            </label>
+            <input
+              id="sId"
+              type="text"
+              required
+              placeholder="學號"
+              class="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
 
-        <div class="space-y-1">
-          <label class="ml-1 text-xs font-bold text-slate-400">
-            學號（登入帳號）
+          <div class="space-y-1">
+            <label class="ml-1 text-xs font-bold text-slate-400">姓名</label>
+            <input
+              id="sName"
+              type="text"
+              required
+              placeholder="姓名"
+              class="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="ml-1 text-xs font-bold text-slate-400">電話</label>
+            <input
+              id="sPhone"
+              type="tel"
+              required
+              placeholder="09xx-xxx-xxx"
+              class="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+
+          <div class="space-y-1">
+            <label class="ml-1 text-xs font-bold text-slate-400">房號 - 床號</label>
+            <div class="flex gap-1">
+              <input
+                id="sRoom"
+                type="text"
+                required
+                placeholder="房號"
+                class="w-2/3 rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+              <input
+                id="sBed"
+                type="text"
+                required
+                placeholder="床"
+                class="w-1/3 rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+          </div>
+
+          <div class="flex items-end">
+            <button
+              id="submitBtn"
+              type="submit"
+              class="w-full rounded-xl bg-blue-600 p-3 font-bold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700"
+            >
+              新增學生
+            </button>
+          </div>
+        </form>
+
+        <div
+          id="formMsg"
+          class="mt-4 hidden rounded-xl p-3 text-sm"
+        ></div>
+      </section>
+
+      <!-- 批次 Excel 匯入 -->
+      <section class="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+        <h2 class="mb-3 flex items-center gap-2 text-lg font-bold text-slate-700">
+          <i data-lucide="file-spreadsheet" class="h-5 w-5 text-emerald-600"></i>
+          <span>Excel 批次匯入學生名單</span>
+        </h2>
+
+        <p class="mb-4 text-xs text-slate-400">
+          Excel 欄位順序依序為：
+          <span
+            class="rounded bg-slate-100 px-2 py-0.5 font-mono"
+          >
+            系級 / 學號 / 姓名 / 電話 / 房號 / 床號
+          </span>
+          ，第一列可為標題，系統會自動略過。
+        </p>
+
+        <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
+          <label
+            class="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-colors hover:bg-emerald-700"
+          >
+            <i data-lucide="upload" class="h-4 w-4"></i>
+            <span>選擇 Excel 檔案</span>
+            <input
+              id="excelInput"
+              type="file"
+              class="hidden"
+              accept=".xlsx,.xls,.csv"
+            />
           </label>
-          <input
-            id="sId"
-            type="text"
-            required
-            placeholder="學號"
-            class="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
-          />
+
+          <button
+            id="downloadTemplate"
+            type="button"
+            class="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
+          >
+            <i data-lucide="download" class="h-4 w-4"></i>
+            <span>下載範本</span>
+          </button>
+
+          <span
+            id="importFileName"
+            class="text-xs italic text-slate-400"
+          >
+            尚未選擇檔案
+          </span>
         </div>
 
-        <div class="space-y-1">
-          <label class="ml-1 text-xs font-bold text-slate-400">姓名</label>
-          <input
-            id="sName"
-            type="text"
-            required
-            placeholder="姓名"
-            class="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
+        <div id="previewArea" class="mt-5 hidden">
+          <div class="mb-3 flex items-center justify-between">
+            <p
+              id="previewCount"
+              class="text-sm font-bold text-slate-700"
+            ></p>
+            <button
+              id="confirmImportBtn"
+              type="button"
+              class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700"
+            >
+              <i data-lucide="check-circle" class="h-4 w-4"></i>
+              <span>確認全部匯入</span>
+            </button>
+          </div>
 
-        <div class="space-y-1">
-          <label class="ml-1 text-xs font-bold text-slate-400">電話</label>
-          <input
-            id="sPhone"
-            type="tel"
-            required
-            placeholder="09xx-xxx-xxx"
-            class="w-full rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
-          />
-        </div>
-
-        <div class="space-y-1">
-          <label class="ml-1 text-xs font-bold text-slate-400">房號 - 床號</label>
-          <div class="flex gap-1">
-            <input
-              id="sRoom"
-              type="text"
-              required
-              placeholder="房號"
-              class="w-2/3 rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
-            />
-            <input
-              id="sBed"
-              type="text"
-              required
-              placeholder="床"
-              class="w-1/3 rounded-xl border p-3 outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          <div class="overflow-x-auto rounded-xl border border-slate-200">
+            <table class="w-full text-sm">
+              <thead class="bg-slate-50 text-xs uppercase text-slate-400">
+                <tr>
+                  <th class="p-3 text-left">系級</th>
+                  <th class="p-3 text-left">學號</th>
+                  <th class="p-3 text-left">姓名</th>
+                  <th class="p-3 text-left">電話</th>
+                  <th class="p-3 text-left">房號</th>
+                  <th class="p-3 text-left">床號</th>
+                  <th class="p-3 text-left">狀態</th>
+                </tr>
+              </thead>
+              <tbody
+                id="previewBody"
+                class="divide-y divide-slate-100"
+              ></tbody>
+            </table>
           </div>
         </div>
 
-        <div class="flex items-end">
-          <button
-            id="submitBtn"
-            type="submit"
-            class="w-full rounded-xl bg-blue-600 p-3 font-bold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700"
-          >
-            新增學生
-          </button>
-        </div>
-      </form>
+        <div
+          id="importMsg"
+          class="mt-4 hidden rounded-xl p-3 text-sm"
+        ></div>
+      </section>
 
-      <div
-        id="formMsg"
-        class="mt-4 hidden rounded-xl p-3 text-sm"
-      ></div>
-    </section>
+      <!-- 學生列表 -->
+      <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <!-- 標題 + 搜尋列 -->
+        <div class="border-b bg-slate-50 p-4">
+          <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+            <div class="flex items-center gap-2">
+              <span class="font-bold text-slate-700">全體成員列表</span>
+              <span
+                id="studentCount"
+                class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700"
+              >
+                載入中…
+              </span>
+            </div>
 
-    <!-- 批次 Excel 匯入 -->
-    <section class="mb-8 rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-      <h2 class="mb-3 flex items-center gap-2 text-lg font-bold text-slate-700">
-        <i data-lucide="file-spreadsheet" class="h-5 w-5 text-emerald-600"></i>
-        <span>Excel 批次匯入學生名單</span>
-      </h2>
-
-      <p class="mb-4 text-xs text-slate-400">
-        Excel 欄位順序依序為：
-        <span
-          class="rounded bg-slate-100 px-2 py-0.5 font-mono"
-        >
-          系級 / 學號 / 姓名 / 電話 / 房號 / 床號
-        </span>
-        ，第一列可為標題，系統會自動略過。
-      </p>
-
-      <div class="flex flex-col items-start gap-3 sm:flex-row sm:items-center">
-        <label
-          class="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-100 transition-colors hover:bg-emerald-700"
-        >
-          <i data-lucide="upload" class="h-4 w-4"></i>
-          <span>選擇 Excel 檔案</span>
-          <input
-            id="excelInput"
-            type="file"
-            class="hidden"
-            accept=".xlsx,.xls,.csv"
-          />
-        </label>
-
-        <button
-          id="downloadTemplate"
-          type="button"
-          class="flex items-center gap-2 rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 transition-colors hover:bg-slate-50"
-        >
-          <i data-lucide="download" class="h-4 w-4"></i>
-          <span>下載範本</span>
-        </button>
-
-        <span
-          id="importFileName"
-          class="text-xs italic text-slate-400"
-        >
-          尚未選擇檔案
-        </span>
-      </div>
-
-      <div id="previewArea" class="mt-5 hidden">
-        <div class="mb-3 flex items-center justify-between">
-          <p
-            id="previewCount"
-            class="text-sm font-bold text-slate-700"
-          ></p>
-          <button
-            id="confirmImportBtn"
-            type="button"
-            class="flex items-center gap-2 rounded-xl bg-blue-600 px-5 py-2 text-sm font-bold text-white shadow-lg shadow-blue-100 transition-colors hover:bg-blue-700"
-          >
-            <i data-lucide="check-circle" class="h-4 w-4"></i>
-            <span>確認全部匯入</span>
-          </button>
+            <!-- 搜尋輸入框 -->
+            <div class="relative w-full md:w-80">
+              <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                <i data-lucide="search" class="h-4 w-4"></i>
+              </span>
+              <input
+                id="studentSearch"
+                type="text"
+                placeholder="搜尋姓名、學號、系級、電話或房號…"
+                class="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none ring-0 transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
+              />
+            </div>
+          </div>
         </div>
 
-        <div class="overflow-x-auto rounded-xl border border-slate-200">
-          <table class="w-full text-sm">
-            <thead class="bg-slate-50 text-xs uppercase text-slate-400">
-              <tr>
-                <th class="p-3 text-left">系級</th>
-                <th class="p-3 text-left">學號</th>
-                <th class="p-3 text-left">姓名</th>
-                <th class="p-3 text-left">電話</th>
-                <th class="p-3 text-left">房號</th>
-                <th class="p-3 text-left">床號</th>
-                <th class="p-3 text-left">狀態</th>
+        <div class="overflow-x-auto">
+          <table class="w-full border-collapse text-left">
+            <thead>
+              <tr class="border-b text-xs uppercase tracking-wider text-slate-400">
+                <th class="p-4 font-medium">系級</th>
+                <th class="p-4 font-medium">學號</th>
+                <th class="p-4 font-medium">姓名</th>
+                <th class="p-4 font-medium">電話</th>
+                <th class="p-4 font-medium">房號 - 床號</th>
+                <th class="p-4 text-center font-medium">操作</th>
               </tr>
             </thead>
             <tbody
-              id="previewBody"
+              id="studentList"
               class="divide-y divide-slate-100"
             ></tbody>
           </table>
         </div>
-      </div>
-
-      <div
-        id="importMsg"
-        class="mt-4 hidden rounded-xl p-3 text-sm"
-      ></div>
-    </section>
-
-    <!-- 學生列表 -->
-    <section class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-      <!-- 標題 + 搜尋列 -->
-      <div class="border-b bg-slate-50 p-4">
-        <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-          <div class="flex items-center gap-2">
-            <span class="font-bold text-slate-700">全體成員列表</span>
-            <span
-              id="studentCount"
-              class="rounded-full bg-blue-100 px-3 py-1 text-xs font-bold text-blue-700"
-            >
-              載入中…
-            </span>
-          </div>
-
-          <!-- 搜尋輸入框 -->
-          <div class="relative w-full md:w-80">
-            <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
-              <i data-lucide="search" class="h-4 w-4"></i>
-            </span>
-            <input
-              id="studentSearch"
-              type="text"
-              placeholder="搜尋姓名、學號、系級、電話或房號…"
-              class="w-full rounded-xl border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-700 outline-none ring-0 transition focus:border-blue-400 focus:ring-2 focus:ring-blue-100"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div class="overflow-x-auto">
-        <table class="w-full border-collapse text-left">
-          <thead>
-            <tr class="border-b text-xs uppercase tracking-wider text-slate-400">
-              <th class="p-4 font-medium">系級</th>
-              <th class="p-4 font-medium">學號</th>
-              <th class="p-4 font-medium">姓名</th>
-              <th class="p-4 font-medium">電話</th>
-              <th class="p-4 font-medium">房號 - 床號</th>
-              <th class="p-4 text-center font-medium">操作</th>
-            </tr>
-          </thead>
-          <tbody
-            id="studentList"
-            class="divide-y divide-slate-100"
-          ></tbody>
-        </table>
-      </div>
-    </section>
+      </section>
+    </main>
   </div>
 
   <audio
@@ -293,6 +369,7 @@
 
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getAuth, signOut } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
     import {
       getFirestore,
       collection,
@@ -316,6 +393,7 @@
 
     const app = initializeApp(firebaseConfig);
     const db = getFirestore(app);
+    const auth = getAuth(app);
 
     // 管理員權限檢查
     if (localStorage.getItem("userRole") !== "admin") {
@@ -689,6 +767,16 @@
         XLSX.utils.book_append_sheet(wb, ws, "學生名單");
         XLSX.writeFile(wb, "學生名單範本.xlsx");
       });
+
+    // 登出（同時登出 Firebase 管理員驗證）
+    document.getElementById("logoutBtn").onclick = async () => {
+      try {
+        await signOut(auth);
+      } finally {
+        localStorage.clear();
+        window.location.href = "./login.html";
+      }
+    };
 
     setCreateMode();
     lucide.createIcons();
