@@ -5,12 +5,14 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>人臉辨識 - 智慧宿舍</title>
 
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link
     rel="stylesheet"
     href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700&display=swap"
   >
   <script src="https://unpkg.com/lucide@latest"></script>
+
 
   <style>
     body {
@@ -19,8 +21,10 @@
   </style>
 </head>
 
+
 <body class="bg-slate-100 text-slate-900">
 <div class="min-h-screen">
+
 
   <!-- 側邊選單 -->
   <aside
@@ -35,6 +39,7 @@
         <i data-lucide="shield-check" class="h-5 w-5"></i>
       </div>
 
+
       <div>
         <p class="text-[11px] uppercase tracking-[0.22em] text-slate-400">
           Smart Dormitory
@@ -43,6 +48,7 @@
       </div>
     </div>
 
+
     <nav class="flex-1 space-y-1 text-sm">
       <a href="./admin-dashboard.html"
          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
@@ -50,11 +56,13 @@
         數據概覽
       </a>
 
+
       <a href="./admin-students.html"
          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
         <i data-lucide="users" class="h-4 w-4"></i>
         學生名單管理
       </a>
+
 
       <a href="./admin-face-records.html"
          aria-current="page"
@@ -63,11 +71,13 @@
         人臉辨識
       </a>
 
+
       <a href="./admin-package.html"
          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
         <i data-lucide="package" class="h-4 w-4"></i>
         包裹入庫登記
       </a>
+
 
       <a href="./admin-visitor.html"
          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
@@ -75,11 +85,13 @@
         訪客申請審核
       </a>
 
+
       <a href="./admin-maintenance.html"
          class="flex items-center gap-3 rounded-xl px-4 py-3 text-slate-400 hover:bg-slate-800 hover:text-white">
         <i data-lucide="wrench" class="h-4 w-4"></i>
         設備報修處理
       </a>
+
 
       <a href="./admin-medical.html"
          class="flex items-center gap-3 rounded-xl px-4 py-3 text-red-400 hover:bg-red-900/40">
@@ -88,6 +100,7 @@
       </a>
     </nav>
 
+
     <button id="logoutBtn" type="button"
       class="mt-6 flex items-center gap-3 border-t border-slate-800 px-4 pt-4 text-xs text-slate-500 hover:text-red-400">
       <i data-lucide="log-out" class="h-4 w-4"></i>
@@ -95,10 +108,12 @@
     </button>
   </aside>
 
-  <main class="p-5 md:ml-64 lg:p-10">
+
+  <main class="p-5 md:ml-64 lg:p-8">
+
 
     <!-- 小螢幕導覽 -->
-    <div class="mb-5 flex justify-between md:hidden">
+    <div class="mb-4 flex justify-between md:hidden">
       <a href="./admin-dashboard.html" class="text-sm text-blue-600">
         ← 返回管理首頁
       </a>
@@ -107,35 +122,63 @@
       </button>
     </div>
 
-    <header class="mb-8">
-      <p class="text-xs uppercase tracking-[0.2em] text-slate-400">
-        Face Recognition
-      </p>
 
-      <h1 class="mt-1 flex items-center gap-3 text-3xl font-bold">
-        <i data-lucide="scan-face" class="h-8 w-8 text-blue-600"></i>
-        人臉辨識
-      </h1>
+    <!-- 標題列：左側標題，右側狀態與分頁按鍵 -->
+    <header
+      class="mb-5 flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
+      <div>
+        <h1 class="flex items-center gap-3 text-2xl font-bold">
+          <i data-lucide="scan-face" class="h-7 w-7 text-blue-600"></i>
+          人臉辨識
+        </h1>
 
-      <p id="dateDisplay" class="mt-2 text-sm text-slate-500"></p>
 
-      <div class="mt-3 flex items-center gap-2 text-sm">
-        <span id="connectionDot"
-          class="h-2 w-2 rounded-full bg-amber-400"></span>
-        <span id="connectionText" role="status" class="text-slate-500">
-          正在確認登入狀態…
-        </span>
+        <p id="dateDisplay" class="mt-1 text-sm text-slate-500"></p>
+      </div>
+
+
+      <div class="ml-auto flex flex-col items-end gap-2">
+        <div class="flex items-center gap-2 text-sm">
+          <span id="connectionDot"
+            class="h-2 w-2 shrink-0 rounded-full bg-amber-400"></span>
+          <span id="connectionText" role="status"
+            class="text-right text-slate-500">
+            正在確認登入狀態…
+          </span>
+        </div>
+
+
+        <div id="tabBar" role="tablist" aria-label="人臉辨識功能"
+             class="hidden gap-2">
+          <button id="tabRecords" type="button"
+            role="tab" aria-selected="true"
+            aria-controls="recordsPanel"
+            class="rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white">
+            紀錄查詢
+          </button>
+
+
+          <button id="tabEnroll" type="button"
+            role="tab" aria-selected="false"
+            aria-controls="enrollPanel"
+            class="rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-500">
+            照片註冊
+          </button>
+        </div>
       </div>
     </header>
+
 
     <!-- Firebase 管理員驗證 -->
     <section id="authPanel"
       class="hidden max-w-lg rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
 
+
       <h2 class="mb-2 text-lg font-bold">管理員安全驗證</h2>
       <p class="mb-6 text-sm text-slate-500">
         請使用具有 admin 權限的 Firebase 帳號。
       </p>
+
 
       <form id="adminLoginForm" class="space-y-5">
         <div>
@@ -148,6 +191,7 @@
             class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500">
         </div>
 
+
         <div>
           <label for="adminPassword"
             class="mb-2 block text-sm text-slate-600">
@@ -158,8 +202,10 @@
             class="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-blue-500">
         </div>
 
+
         <p id="authError" role="alert"
           class="hidden rounded-xl bg-red-50 p-3 text-sm text-red-600"></p>
+
 
         <button id="adminLoginBtn" type="submit"
           class="w-full rounded-xl bg-blue-600 px-4 py-3 font-bold text-white hover:bg-blue-700 disabled:opacity-50">
@@ -168,29 +214,14 @@
       </form>
     </section>
 
+
     <!-- 驗證後內容 -->
     <div id="workspace" class="hidden">
 
-      <!-- 分頁 -->
-      <div class="mb-6 flex gap-2 border-b border-slate-200 pb-3"
-           role="tablist" aria-label="人臉辨識功能">
-        <button id="tabRecords" type="button"
-          role="tab" aria-selected="true"
-          aria-controls="recordsPanel"
-          class="rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white">
-          紀錄查詢
-        </button>
-
-        <button id="tabEnroll" type="button"
-          role="tab" aria-selected="false"
-          aria-controls="enrollPanel"
-          class="rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-500">
-          照片註冊
-        </button>
-      </div>
 
       <!-- ==================== 紀錄查詢 ==================== -->
       <div id="recordsPanel" role="tabpanel" aria-labelledby="tabRecords">
+
 
         <section class="grid grid-cols-1 gap-4 lg:grid-cols-3">
           <div class="rounded-2xl border border-slate-200 bg-white p-6">
@@ -198,11 +229,13 @@
             <p id="totalCount" class="mt-2 text-3xl font-bold">—</p>
           </div>
 
+
           <div class="rounded-2xl border border-emerald-100 bg-white p-6">
             <p class="text-sm text-slate-500">辨識通過</p>
             <p id="grantedCount"
               class="mt-2 text-3xl font-bold text-emerald-600">—</p>
           </div>
+
 
           <div class="rounded-2xl border border-red-100 bg-white p-6">
             <p class="text-sm text-slate-500">未通過／處理異常</p>
@@ -211,18 +244,21 @@
           </div>
         </section>
 
+
         <section
-          class="mt-6 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 xl:flex-row xl:items-end">
+          class="mt-5 flex flex-col gap-4 rounded-2xl border border-slate-200 bg-white p-5 xl:flex-row xl:items-end">
+
 
           <div class="flex-1">
             <label for="searchInput"
               class="mb-2 block text-sm text-slate-600">
-              搜尋識別身分或裝置
+              搜尋學號、姓名、房號
             </label>
             <input id="searchInput" type="search"
-              placeholder="輸入學號或裝置名稱"
+              placeholder="輸入學號、姓名、房號"
               class="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-500">
           </div>
+
 
           <div>
             <label for="statusFilter"
@@ -239,10 +275,10 @@
           </div>
         </section>
 
-        <p class="mt-3 text-xs leading-relaxed text-slate-500">
-          僅載入最新 100 筆，統計與搜尋只涵蓋這些紀錄。
-          「辨識通過」不代表門鎖已實際開啟。
-        </p>
+
+        <p id="usersNotice" role="status"
+          class="mt-3 hidden text-xs leading-relaxed text-amber-600"></p>
+
 
         <section
           class="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
@@ -251,17 +287,26 @@
             <span id="visibleCount" class="text-xs text-slate-500">0 筆</span>
           </div>
 
+
           <div class="overflow-x-auto">
-            <table class="w-full whitespace-nowrap text-left text-sm">
+            <table
+              class="w-full min-w-[900px] table-fixed whitespace-nowrap text-left text-sm">
+              <colgroup>
+                <col class="w-1/6">
+                <col class="w-1/6">
+                <col class="w-1/6">
+                <col class="w-1/6">
+                <col class="w-1/6">
+                <col class="w-1/6">
+              </colgroup>
               <thead class="bg-slate-50 text-slate-500">
                 <tr>
-                  <th class="px-5 py-4 font-medium">辨識時間</th>
-                  <th class="px-5 py-4 font-medium">識別身分</th>
-                  <th class="px-5 py-4 font-medium">辨識結果</th>
-                  <th class="px-5 py-4 font-medium">比對分數</th>
-                  <th class="px-5 py-4 font-medium">人臉數</th>
-                  <th class="px-5 py-4 font-medium">耗時</th>
-                  <th class="px-5 py-4 font-medium">裝置</th>
+                  <th class="px-5 py-4 text-left font-medium">辨識時間</th>
+                  <th class="px-5 py-4 text-left font-medium">辨識結果</th>
+                  <th class="px-5 py-4 text-left font-medium">姓名</th>
+                  <th class="px-5 py-4 text-left font-medium">房號</th>
+                  <th class="px-5 py-4 text-left font-medium">床號</th>
+                  <th class="px-5 py-4 text-left font-medium">學號</th>
                 </tr>
               </thead>
               <tbody id="recordsBody"
@@ -271,44 +316,37 @@
         </section>
       </div>
 
+
       <!-- ==================== 照片註冊 ==================== -->
       <div id="enrollPanel" role="tabpanel"
            aria-labelledby="tabEnroll" class="hidden">
 
+
+        <!-- 辨識主機檢查 -->
+        <div id="piCheckBox"
+          class="mb-3 flex flex-wrap items-center justify-end gap-2 text-xs text-slate-400">
+          <code id="piAddress" class="hidden text-[11px] lg:inline"></code>
+          <span id="piStatus" role="status"
+            class="max-w-[320px] truncate text-slate-400">尚未檢查主機</span>
+          <button id="checkPiBtn" type="button"
+            class="rounded-lg border border-slate-200 px-2.5 py-1 text-xs text-slate-400 hover:bg-slate-50 hover:text-slate-600 disabled:opacity-50">
+            檢查辨識主機
+          </button>
+        </div>
+
+
         <section
           class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
 
-          <div class="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 class="text-lg font-bold">批次照片註冊</h2>
-              <p class="mt-2 text-sm leading-relaxed text-slate-500">
-                照片請以「學號.jpg」命名，每位學生選擇一張。
-                已註冊學號會跳過，不會透過本頁覆蓋原資料。
-              </p>
-            </div>
 
-            <button id="checkPiBtn" type="button"
-              class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50">
-              檢查辨識主機
-            </button>
-          </div>
-
-          <div class="mt-5 rounded-xl bg-slate-50 p-4 text-sm">
-            <p class="break-all text-slate-600">
-              辨識主機：
-              <code id="piAddress"></code>
-            </p>
-            <p id="piStatus" role="status" class="mt-2 text-slate-500">
-              尚未檢查主機。
+          <div>
+            <h2 class="text-lg font-bold">批次照片註冊</h2>
+            <p class="mt-2 text-sm leading-relaxed text-slate-500">
+              照片請以「學號.jpg」命名，每位學生選擇一張。
+              已註冊學號會跳過，不會透過本頁覆蓋原資料。
             </p>
           </div>
 
-          <div
-            class="mt-4 rounded-xl border border-amber-100 bg-amber-50 p-4 text-xs leading-relaxed text-amber-800">
-            這個版本的樹莓派註冊 API 尚未驗證管理員身分；
-            本頁登入檢查不等於 API 權限保護。
-            請僅在受控實驗室網路使用，勿開放到網際網路。
-          </div>
 
           <div class="mt-6 flex flex-wrap items-center gap-3">
             <label
@@ -319,15 +357,18 @@
                 multiple class="hidden">
             </label>
 
+
             <button id="startEnrollBtn" type="button" disabled
               class="rounded-xl bg-blue-600 px-4 py-3 text-sm font-bold text-white hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50">
               確認批次註冊
             </button>
 
+
             <button id="downloadBtn" type="button" disabled
               class="rounded-xl border border-slate-200 px-4 py-3 text-sm font-medium text-slate-600 hover:bg-slate-50 disabled:opacity-50">
               下載結果 CSV
             </button>
+
 
             <button id="clearBtn" type="button" disabled
               class="rounded-xl px-4 py-3 text-sm text-slate-500 hover:bg-slate-100 disabled:opacity-50">
@@ -335,30 +376,36 @@
             </button>
           </div>
 
+
           <p class="mt-3 text-xs text-slate-400">
             範例：411220413.jpg、411220414.jpg。
             請勿同時從其他頁面註冊、追加樣本或修改同一位學生的人臉。
           </p>
+
 
           <p id="enrollSummary"
             class="mt-5 text-sm font-medium text-slate-600">
             尚未選擇照片。
           </p>
 
+
           <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100">
             <div id="progressBar"
               class="h-full w-0 bg-blue-600 transition-all"></div>
           </div>
 
+
           <p id="enrollMessage" role="status"
             class="mt-3 whitespace-pre-wrap text-sm text-slate-500"></p>
         </section>
+
 
         <section
           class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
           <div class="border-b p-5">
             <h2 class="font-semibold">照片註冊清單</h2>
           </div>
+
 
           <div class="overflow-x-auto">
             <table class="w-full min-w-[650px] text-left text-sm">
@@ -375,15 +422,103 @@
             </table>
           </div>
         </section>
+
+
+        <!-- 註冊狀態查詢 -->
+        <section
+          class="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+          <div
+            class="flex flex-wrap items-center justify-between gap-3 border-b p-5">
+            <div>
+              <h2 class="font-semibold">註冊狀態查詢</h2>
+              <p id="statusSummary" class="mt-1 text-xs text-slate-500">
+                尚未查詢。
+              </p>
+            </div>
+
+
+            <button id="statusRefreshBtn" type="button"
+              class="rounded-xl border border-slate-200 px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+              重新查詢
+            </button>
+          </div>
+
+
+          <div class="flex flex-col gap-4 border-b p-5 xl:flex-row xl:items-end">
+            <div class="flex-1">
+              <label for="statusSearch"
+                class="mb-2 block text-sm text-slate-600">
+                搜尋學號、姓名、房號或床號
+              </label>
+              <input id="statusSearch" type="search"
+                placeholder="輸入學號、姓名、房號或床號"
+                class="w-full rounded-xl border border-slate-300 px-4 py-2.5 outline-none focus:border-blue-500">
+            </div>
+
+
+            <div>
+              <label for="statusListFilter"
+                class="mb-2 block text-sm text-slate-600">
+                註冊狀態
+              </label>
+              <select id="statusListFilter"
+                class="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 xl:w-44">
+                <option value="all">全部</option>
+                <option value="enrolled">已註冊</option>
+                <option value="none">未註冊</option>
+                <option value="other">查詢失敗／尚未查詢</option>
+              </select>
+            </div>
+          </div>
+
+
+          <p id="statusListMessage" role="status"
+            class="hidden px-5 pt-3 text-xs"></p>
+
+
+          <p class="px-5 pt-3 text-xs text-slate-400">
+            按「刪除」只會移除樹莓派上的人臉資料並先自動備份，
+            不影響學生帳號與辨識紀錄；刪除後該學號需重新註冊才能刷臉進門。
+          </p>
+
+
+          <div class="mt-3 overflow-x-auto">
+            <table
+              class="w-full min-w-[900px] table-fixed whitespace-nowrap text-left text-sm">
+              <colgroup>
+                <col class="w-1/6">
+                <col class="w-1/6">
+                <col class="w-1/6">
+                <col class="w-1/6">
+                <col class="w-1/6">
+                <col class="w-1/6">
+              </colgroup>
+              <thead class="bg-slate-50 text-slate-500">
+                <tr>
+                  <th class="px-5 py-4 text-left font-medium">學號</th>
+                  <th class="px-5 py-4 text-left font-medium">姓名</th>
+                  <th class="px-5 py-4 text-left font-medium">操作</th>
+                  <th class="px-5 py-4 text-left font-medium">房號</th>
+                  <th class="px-5 py-4 text-left font-medium">床號</th>
+                  <th class="px-5 py-4 text-left font-medium">註冊狀態</th>
+                </tr>
+              </thead>
+              <tbody id="statusListBody"
+                class="divide-y divide-slate-100"></tbody>
+            </table>
+          </div>
+        </section>
       </div>
     </div>
   </main>
 </div>
 
+
 <script type="module">
 import {
   initializeApp
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+
 
 import {
   getAuth,
@@ -391,6 +526,7 @@ import {
   signInWithEmailAndPassword,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-auth.js";
+
 
 import {
   getFirestore,
@@ -401,6 +537,7 @@ import {
   onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-firestore.js";
 
+
 const firebaseConfig = {
   apiKey: "AIzaSyAs6t5RsKjIr0mJEI6gnk579AIcG-_FJ_I",
   authDomain: "smartdorm-3ab79.firebaseapp.com",
@@ -410,28 +547,44 @@ const firebaseConfig = {
   appId: "1:240227925869:web:5a71f95a2f18bef1972464"
 };
 
+
 const PI_URL = "http://192.168.0.9:5000";
+const STATUS_CONCURRENCY = 4;
 const $ = id => document.getElementById(id);
+
 
 if (localStorage.getItem("userRole") !== "admin") {
   window.location.replace("./login.html");
   throw new Error("Admin dashboard login required");
 }
 
+
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+
 let adminVerified = false;
 let authVersion = 0;
 let records = [];
+let usersMap = new Map();
+let usersLoaded = false;
+let students = [];
+let enrollStatus = new Map();
+let statusController = null;
+let statusRunId = 0;
+let statusLoading = false;
 let unsubscribeRecords = null;
+let unsubscribeUsers = null;
 let entries = [];
 let running = false;
+let deleting = false;
 let uploadController = null;
 let activeTab = "records";
 
+
 $("piAddress").textContent = PI_URL;
+
 
 $("dateDisplay").textContent = new Date().toLocaleDateString("zh-TW", {
   timeZone: "Asia/Taipei",
@@ -441,22 +594,46 @@ $("dateDisplay").textContent = new Date().toLocaleDateString("zh-TW", {
   weekday: "long"
 });
 
+
 function icons() {
   window.lucide?.createIcons();
 }
 
+
 function setConnection(text, color) {
   $("connectionText").textContent = text;
   $("connectionDot").className =
-    `h-2 w-2 rounded-full ${color}`;
+    `h-2 w-2 shrink-0 rounded-full ${color}`;
 }
+
+
+function setTabBarVisible(visible) {
+  $("tabBar").classList.toggle("hidden", !visible);
+  $("tabBar").classList.toggle("flex", visible);
+}
+
 
 function stopRecordsListener() {
   if (unsubscribeRecords) {
     unsubscribeRecords();
     unsubscribeRecords = null;
   }
+
+
+  if (unsubscribeUsers) {
+    unsubscribeUsers();
+    unsubscribeUsers = null;
+  }
 }
+
+
+function abortStatusQueries() {
+  statusRunId += 1;
+  statusController?.abort();
+  statusController = null;
+  statusLoading = false;
+}
+
 
 function resetRecordDisplay() {
   records = [];
@@ -467,20 +644,34 @@ function resetRecordDisplay() {
   $("recordsBody").replaceChildren();
 }
 
+
 function showAuthPanel(message = "") {
   adminVerified = false;
   uploadController?.abort();
+  abortStatusQueries();
   stopRecordsListener();
   resetRecordDisplay();
 
+
+  usersMap = new Map();
+  usersLoaded = false;
+  students = [];
+  enrollStatus = new Map();
+  $("usersNotice").classList.add("hidden");
+  renderEnrollStatus();
+
+
+  setTabBarVisible(false);
   $("workspace").classList.add("hidden");
   $("authPanel").classList.remove("hidden");
   $("authError").textContent = message;
   $("authError").classList.toggle("hidden", !message);
 
+
   setConnection("需要管理員驗證", "bg-amber-400");
   updateEnrollButtons();
 }
+
 
 function authErrorMessage(error) {
   const messages = {
@@ -492,11 +683,14 @@ function authErrorMessage(error) {
     "auth/network-request-failed": "網路連線失敗。"
   };
 
+
   return messages[error.code] || error.message || "驗證失敗。";
 }
 
+
 function switchTab(tab) {
   activeTab = tab;
+
 
   for (const [name, buttonId, panelId] of [
     ["records", "tabRecords", "recordsPanel"],
@@ -504,31 +698,42 @@ function switchTab(tab) {
   ]) {
     const selected = tab === name;
 
+
     $(buttonId).className = selected
-      ? "rounded-xl bg-blue-600 px-5 py-3 text-sm font-bold text-white"
-      : "rounded-xl bg-white px-5 py-3 text-sm font-bold text-slate-500";
+      ? "rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white"
+      : "rounded-xl bg-white px-4 py-2 text-sm font-bold text-slate-500";
+
 
     $(buttonId).setAttribute("aria-selected", String(selected));
     $(panelId).classList.toggle("hidden", !selected);
   }
+
+
+  if (tab === "enroll" && adminVerified) refreshEnrollStatus();
 }
+
 
 $("tabRecords").addEventListener("click", () => switchTab("records"));
 $("tabEnroll").addEventListener("click", () => switchTab("enroll"));
 
+
 // ==================== 紀錄查詢 ====================
+
 
 function showRecordMessage(message) {
   const tr = document.createElement("tr");
   const td = document.createElement("td");
 
-  td.colSpan = 7;
+
+  td.colSpan = 6;
   td.className = "px-5 py-12 text-center text-slate-500";
   td.textContent = message;
+
 
   tr.appendChild(td);
   $("recordsBody").replaceChildren(tr);
 }
+
 
 function resultType(record) {
   if (record.ok !== true) return "error";
@@ -537,11 +742,14 @@ function resultType(record) {
   return "error";
 }
 
+
 function formatTime(value) {
   if (!value || typeof value.toDate !== "function") return "—";
 
+
   const date = value.toDate();
   if (Number.isNaN(date.getTime())) return "—";
+
 
   return date.toLocaleString("zh-TW", {
     timeZone: "Asia/Taipei",
@@ -549,12 +757,8 @@ function formatTime(value) {
   });
 }
 
-function formatNumber(value, digits = null) {
-  if (typeof value !== "number" || !Number.isFinite(value)) return "—";
-  return digits === null ? String(value) : value.toFixed(digits);
-}
 
-function addCell(row, text, classes = "px-5 py-4 text-slate-600") {
+function addCell(row, text, classes = "px-5 py-4 text-left text-slate-600") {
   const td = document.createElement("td");
   td.className = classes;
   td.textContent = String(text);
@@ -562,21 +766,61 @@ function addCell(row, text, classes = "px-5 py-4 text-slate-600") {
   return td;
 }
 
+
+// 以辨識身分（學號）對應 users 資料庫的姓名、房號、床號
+function studentInfo(record) {
+  const sid = String(record.match ?? "").trim();
+
+
+  if (!sid) {
+    return { sid: "", name: "—", room: "—", bed: "—" };
+  }
+
+
+  const user = usersMap.get(sid);
+
+
+  if (!user) {
+    return {
+      sid,
+      name: usersLoaded ? "查無學生資料" : "—",
+      room: "—",
+      bed: "—"
+    };
+  }
+
+
+  return {
+    sid,
+    name: user.name || "—",
+    room: user.room || "—",
+    bed: user.bed || "—"
+  };
+}
+
+
 function renderRecords() {
   const keyword = $("searchInput").value.trim().toLowerCase();
   const selectedStatus = $("statusFilter").value;
 
+
   const filtered = records.filter(record => {
-    const searchable = [record.match ?? "", record.deviceId ?? ""]
+    const info = studentInfo(record);
+
+
+    const searchable = [info.sid, info.name, info.room, info.bed]
       .join(" ")
       .toLowerCase();
+
 
     return searchable.includes(keyword) &&
       (selectedStatus === "all" ||
        resultType(record) === selectedStatus);
   });
 
+
   $("visibleCount").textContent = `${filtered.length} 筆`;
+
 
   if (!filtered.length) {
     showRecordMessage(
@@ -587,60 +831,147 @@ function renderRecords() {
     return;
   }
 
+
   const statuses = {
     granted: ["辨識通過", "bg-emerald-100 text-emerald-700"],
     denied: ["辨識未通過", "bg-red-100 text-red-700"],
     error: ["處理異常", "bg-amber-100 text-amber-700"]
   };
 
+
   const fragment = document.createDocumentFragment();
 
+
   for (const record of filtered) {
+    const info = studentInfo(record);
     const row = document.createElement("tr");
     row.className = "hover:bg-slate-50";
 
+
     addCell(row, formatTime(record.createdAt));
-    addCell(
-      row,
-      record.match === null ||
-      record.match === undefined ||
-      record.match === ""
-        ? "未識別"
-        : record.match
-    );
+
 
     const statusCell = addCell(row, "");
     const [label, classes] = statuses[resultType(record)];
     const badge = document.createElement("span");
 
+
     badge.textContent = label;
     badge.className =
       `rounded-full px-3 py-1 text-xs font-medium ${classes}`;
 
+
     statusCell.appendChild(badge);
 
-    addCell(row, formatNumber(record.score, 3));
-    addCell(row, formatNumber(record.faces));
 
-    const duration = formatNumber(record.ms);
-    addCell(row, duration === "—" ? duration : `${duration} ms`);
-    addCell(row, record.deviceId ?? "未指定");
+    addCell(row, info.name);
+    addCell(row, info.room);
+    addCell(row, info.bed);
+    addCell(row, info.sid || "未識別");
+
 
     fragment.appendChild(row);
   }
 
+
   $("recordsBody").replaceChildren(fragment);
 }
+
+
+function startUsersListener() {
+  if (unsubscribeUsers) {
+    unsubscribeUsers();
+    unsubscribeUsers = null;
+  }
+
+
+  usersLoaded = false;
+
+
+  unsubscribeUsers = onSnapshot(
+    collection(db, "users"),
+    snapshot => {
+      const next = new Map();
+      const nextStudents = [];
+
+
+      snapshot.forEach(docSnap => {
+        const user = docSnap.data();
+
+
+        // 只取顯示需要的欄位，不保留密碼等其他資料
+        const info = {
+          name: String(user.name ?? "").trim(),
+          room: String(user.room ?? "").trim(),
+          bed: String(user.bed ?? "").trim()
+        };
+
+
+        const studentId = String(user.studentId ?? "").trim();
+        if (studentId) next.set(studentId, info);
+        next.set(docSnap.id, info);
+
+
+        if (user.role === "student") {
+          nextStudents.push({
+            sid: studentId || docSnap.id,
+            ...info
+          });
+        }
+      });
+
+
+      nextStudents.sort((a, b) =>
+        a.room.localeCompare(b.room, "zh-Hant", { numeric: true }) ||
+        a.bed.localeCompare(b.bed, "zh-Hant", { numeric: true }) ||
+        a.sid.localeCompare(b.sid)
+      );
+
+
+      usersMap = next;
+      usersLoaded = true;
+      students = nextStudents;
+
+
+      $("usersNotice").classList.add("hidden");
+      renderRecords();
+      renderEnrollStatus();
+
+
+      if (activeTab === "enroll") refreshEnrollStatus();
+    },
+    error => {
+      console.error(error);
+      usersMap = new Map();
+      usersLoaded = false;
+      students = [];
+
+
+      $("usersNotice").textContent =
+        `無法讀取學生資料（${error.code || "unknown"}），` +
+        "姓名、房號、床號暫以「—」顯示，請確認 Firestore 規則。";
+      $("usersNotice").classList.remove("hidden");
+
+
+      renderRecords();
+      renderEnrollStatus();
+    }
+  );
+}
+
 
 function startRecordsListener() {
   stopRecordsListener();
   showRecordMessage("正在載入…");
+  startUsersListener();
+
 
   const recordsQuery = query(
     collection(db, "face_records"),
     orderBy("createdAt", "desc"),
     limit(100)
   );
+
 
   unsubscribeRecords = onSnapshot(
     recordsQuery,
@@ -651,13 +982,16 @@ function startRecordsListener() {
         id: docSnap.id
       }));
 
+
       const granted = records.filter(
         record => resultType(record) === "granted"
       ).length;
 
+
       $("totalCount").textContent = String(records.length);
       $("grantedCount").textContent = String(granted);
       $("otherCount").textContent = String(records.length - granted);
+
 
       setConnection(
         snapshot.metadata.fromCache
@@ -667,6 +1001,7 @@ function startRecordsListener() {
           ? "bg-amber-400"
           : "bg-emerald-400"
       );
+
 
       renderRecords();
     },
@@ -681,10 +1016,13 @@ function startRecordsListener() {
   );
 }
 
+
 $("searchInput").addEventListener("input", renderRecords);
 $("statusFilter").addEventListener("change", renderRecords);
 
+
 // ==================== 照片註冊 ====================
+
 
 async function requestJson(
   path,
@@ -694,6 +1032,7 @@ async function requestJson(
 ) {
   const timer = setTimeout(() => controller.abort(), timeoutMs);
 
+
   try {
     const response = await fetch(PI_URL + path, {
       ...options,
@@ -701,8 +1040,10 @@ async function requestJson(
       cache: "no-store"
     });
 
+
     const text = await response.text();
     let data;
+
 
     try {
       data = JSON.parse(text);
@@ -712,25 +1053,50 @@ async function requestJson(
       );
     }
 
+
     return { response, data };
   } finally {
     clearTimeout(timer);
   }
 }
 
+
+function setPiStatus(text, tone = "neutral") {
+  const tones = {
+    neutral: "text-slate-400",
+    ok: "text-emerald-600",
+    error: "text-red-500"
+  };
+
+
+  $("piStatus").textContent = text;
+  $("piStatus").title = text;
+  $("piStatus").className =
+    `max-w-[320px] truncate ${tones[tone] || tones.neutral}`;
+}
+
+
 function updateEnrollButtons() {
-  $("photos").disabled = running || !adminVerified;
+  const busy = running || deleting;
+
+
+  $("photos").disabled = busy || !adminVerified;
   $("startEnrollBtn").disabled =
-    running || !adminVerified ||
+    busy || !adminVerified ||
     !entries.some(entry => entry.status === "待處理");
 
-  $("downloadBtn").disabled = running || !entries.length;
-  $("clearBtn").disabled = running || !entries.length;
-  $("checkPiBtn").disabled = running || !adminVerified;
+
+  $("downloadBtn").disabled = busy || !entries.length;
+  $("clearBtn").disabled = busy || !entries.length;
+  $("checkPiBtn").disabled = busy || !adminVerified;
+  $("statusRefreshBtn").disabled =
+    busy || statusLoading || !adminVerified;
 }
+
 
 function renderEnroll() {
   const fragment = document.createDocumentFragment();
+
 
   if (!entries.length) {
     const row = document.createElement("tr");
@@ -739,6 +1105,7 @@ function renderEnroll() {
     td.className = "px-5 py-12 text-center text-slate-400";
     fragment.appendChild(row);
   }
+
 
   const colors = {
     "成功": "text-emerald-600",
@@ -752,9 +1119,11 @@ function renderEnroll() {
     "上傳中": "text-blue-600"
   };
 
+
   for (const entry of entries) {
     const row = document.createElement("tr");
     row.className = "hover:bg-slate-50";
+
 
     addCell(row, entry.file.name, "break-all px-5 py-4 text-slate-600");
     addCell(row, entry.sid || "—", "px-5 py-4 font-mono text-blue-600");
@@ -765,38 +1134,49 @@ function renderEnroll() {
     );
     addCell(row, entry.detail, "px-5 py-4 text-slate-500");
 
+
     fragment.appendChild(row);
   }
 
+
   $("enrollBody").replaceChildren(fragment);
+
 
   const count = status =>
     entries.filter(entry => entry.status === status).length;
+
 
   $("enrollSummary").textContent = entries.length
     ? `共 ${entries.length} 張｜成功 ${count("成功")}｜已註冊跳過 ${count("已註冊，跳過")}｜失敗 ${count("失敗")}｜待確認 ${count("結果待確認")}`
     : "尚未選擇照片。";
 
+
   const completed = entries.filter(entry =>
     !["待處理", "查詢中", "上傳中"].includes(entry.status)
   ).length;
 
+
   $("progressBar").style.width =
     `${entries.length ? completed / entries.length * 100 : 0}%`;
+
 
   updateEnrollButtons();
 }
 
+
 $("photos").addEventListener("change", event => {
-  if (running || !adminVerified) return;
+  if (running || deleting || !adminVerified) return;
+
 
   const seen = new Set();
+
 
   entries = Array.from(event.target.files || []).map(file => {
     const match = /^([0-9]{1,32})\.jpe?g$/i.exec(file.name);
     const sid = match ? match[1] : "";
     let status = "待處理";
     let detail = "";
+
 
     if (!match) {
       status = "檔名錯誤";
@@ -811,15 +1191,19 @@ $("photos").addEventListener("change", event => {
       seen.add(sid);
     }
 
+
     return { file, sid, status, detail };
   });
+
 
   $("enrollMessage").textContent = "";
   renderEnroll();
 });
 
+
 $("clearBtn").addEventListener("click", () => {
-  if (running) return;
+  if (running || deleting) return;
+
 
   entries = [];
   $("photos").value = "";
@@ -827,23 +1211,29 @@ $("clearBtn").addEventListener("click", () => {
   renderEnroll();
 });
 
+
 function describeEnrollError(data) {
   if (data.error === "need exactly one face") {
     return `照片需剛好一張人臉，目前偵測到 ${data.faces ?? "未知"} 張。`;
   }
 
+
   if (data.error === "cannot decode image") {
     return "無法讀取照片，請換一張有效的 JPG/JPEG。";
   }
 
+
   return data.error || "請查看樹莓派服務紀錄。";
 }
+
 
 $("checkPiBtn").addEventListener("click", async () => {
   if (!adminVerified) return;
 
+
   $("checkPiBtn").disabled = true;
-  $("piStatus").textContent = "正在檢查…";
+  setPiStatus("正在檢查…", "neutral");
+
 
   try {
     const { response, data } = await requestJson(
@@ -852,38 +1242,431 @@ $("checkPiBtn").addEventListener("click", async () => {
       10000
     );
 
+
     if (!response.ok || data.ok !== true ||
         typeof data.enrolled !== "boolean") {
       throw new Error(data.error || `HTTP ${response.status}`);
     }
 
-    $("piStatus").className = "mt-2 text-emerald-600";
-    $("piStatus").textContent = "主機連線正常，註冊狀態查詢可用。";
+
+    setPiStatus("主機連線正常", "ok");
   } catch (error) {
-    $("piStatus").className = "mt-2 text-red-600";
-    $("piStatus").textContent =
-      "連線失敗：請檢查實驗室網路、服務及 CORS。" +
-      `（${error.message}）`;
+    setPiStatus(
+      `連線失敗：請檢查實驗室網路、服務及 CORS（${error.message}）`,
+      "error"
+    );
   } finally {
     updateEnrollButtons();
   }
 });
 
+
+// ==================== 註冊狀態查詢 ====================
+
+
+const statusViews = {
+  enrolled: ["已註冊", "bg-emerald-100 text-emerald-700"],
+  none: ["未註冊", "bg-slate-100 text-slate-600"],
+  loading: ["查詢中", "bg-blue-100 text-blue-700"],
+  error: ["查詢失敗", "bg-red-100 text-red-700"],
+  unknown: ["尚未查詢", "bg-amber-100 text-amber-700"]
+};
+
+
+function showStatusListMessage(text, tone = "neutral") {
+  const tones = {
+    neutral: "text-slate-500",
+    ok: "text-emerald-600",
+    error: "text-red-600"
+  };
+
+
+  const element = $("statusListMessage");
+  element.textContent = text;
+  element.className = `px-5 pt-3 text-xs ${tones[tone] || tones.neutral}`;
+  element.classList.toggle("hidden", !text);
+}
+
+
+function renderEnrollStatus() {
+  const keyword = $("statusSearch").value.trim().toLowerCase();
+  const selected = $("statusListFilter").value;
+
+
+  const rows = students.map(student => ({
+    ...student,
+    status: enrollStatus.get(student.sid) || { state: "unknown" }
+  }));
+
+
+  const count = state =>
+    rows.filter(row => row.status.state === state).length;
+
+
+  const enrolledCount = count("enrolled");
+  const noneCount = count("none");
+  const otherCount = rows.length - enrolledCount - noneCount;
+
+
+  $("statusSummary").textContent = rows.length
+    ? `共 ${rows.length} 位｜已註冊 ${enrolledCount}｜未註冊 ${noneCount}｜查詢中／失敗 ${otherCount}`
+    : "尚無學生資料。";
+
+
+  const filtered = rows.filter(row => {
+    const searchable = [row.sid, row.name, row.room, row.bed]
+      .join(" ")
+      .toLowerCase();
+
+
+    if (!searchable.includes(keyword)) return false;
+
+
+    if (selected === "all") return true;
+    if (selected === "other") {
+      return row.status.state !== "enrolled" &&
+        row.status.state !== "none";
+    }
+
+
+    return row.status.state === selected;
+  });
+
+
+  if (!filtered.length) {
+    const tr = document.createElement("tr");
+    const td = document.createElement("td");
+
+
+    td.colSpan = 6;
+    td.className = "px-5 py-12 text-center text-slate-400";
+    td.textContent = !usersLoaded
+      ? "正在載入學生名單…"
+      : rows.length
+        ? "沒有符合條件的學生。"
+        : "目前沒有學生資料。";
+
+
+    tr.appendChild(td);
+    $("statusListBody").replaceChildren(tr);
+    return;
+  }
+
+
+  const fragment = document.createDocumentFragment();
+
+
+  for (const row of filtered) {
+    const tr = document.createElement("tr");
+    tr.className = "hover:bg-slate-50";
+
+
+    addCell(tr, row.sid, "px-5 py-4 text-left font-mono text-blue-600");
+    addCell(tr, row.name || "—");
+
+
+    // 操作欄緊接在姓名後：只有已註冊的學生才有刪除鍵
+    const actionCell = addCell(tr, "", "px-5 py-4 text-left");
+
+
+    if (row.status.state === "enrolled") {
+      const button = document.createElement("button");
+
+
+      button.type = "button";
+      button.textContent = "刪除";
+      button.className =
+        "rounded-lg border border-red-200 px-3 py-1 text-xs font-medium " +
+        "text-red-600 hover:bg-red-50 " +
+        "disabled:cursor-not-allowed disabled:opacity-40";
+      button.disabled =
+        running || deleting || statusLoading || !adminVerified;
+      button.setAttribute(
+        "aria-label",
+        `刪除學號 ${row.sid} 的人臉資料`
+      );
+      button.addEventListener("click", () => deleteFace(row));
+
+
+      actionCell.appendChild(button);
+    } else {
+      actionCell.textContent = "—";
+    }
+
+
+    addCell(tr, row.room || "—");
+    addCell(tr, row.bed || "—");
+
+
+    const stateCell = addCell(tr, "");
+    const [label, classes] =
+      statusViews[row.status.state] || statusViews.unknown;
+    const badge = document.createElement("span");
+
+
+    badge.textContent = label;
+    badge.className =
+      `rounded-full px-3 py-1 text-xs font-medium ${classes}`;
+    stateCell.appendChild(badge);
+
+
+    fragment.appendChild(tr);
+  }
+
+
+  $("statusListBody").replaceChildren(fragment);
+}
+
+
+async function refreshEnrollStatus(force = false) {
+  if (!adminVerified || running || deleting || !students.length) return;
+
+
+  const targets = students.filter(student => {
+    if (force) return true;
+
+
+    const current = enrollStatus.get(student.sid);
+    return !current || current.state === "error";
+  });
+
+
+  if (!targets.length) return;
+
+
+  statusController?.abort();
+  const runController = new AbortController();
+  statusController = runController;
+  const runId = ++statusRunId;
+
+
+  for (const student of targets) {
+    enrollStatus.set(student.sid, { state: "loading" });
+  }
+
+
+  statusLoading = true;
+  showStatusListMessage("");
+  renderEnrollStatus();
+  updateEnrollButtons();
+
+
+  let failed = 0;
+  let nextIndex = 0;
+
+
+  async function worker() {
+    while (nextIndex < targets.length) {
+      if (runController.signal.aborted) return;
+
+
+      const student = targets[nextIndex++];
+      const requestController = new AbortController();
+      const abortRequest = () => requestController.abort();
+
+
+      runController.signal.addEventListener("abort", abortRequest, {
+        once: true
+      });
+
+
+      try {
+        const { response, data } = await requestJson(
+          "/enroll/status?name=" + encodeURIComponent(student.sid),
+          {},
+          10000,
+          requestController
+        );
+
+
+        if (runId !== statusRunId) return;
+
+
+        if (!response.ok || data.ok !== true ||
+            typeof data.enrolled !== "boolean") {
+          throw new Error(data.error || `HTTP ${response.status}`);
+        }
+
+
+        enrollStatus.set(student.sid, {
+          state: data.enrolled ? "enrolled" : "none"
+        });
+      } catch (error) {
+        if (runId !== statusRunId) return;
+
+
+        failed += 1;
+        enrollStatus.set(student.sid, { state: "error" });
+      } finally {
+        runController.signal.removeEventListener("abort", abortRequest);
+      }
+
+
+      if (runId === statusRunId) renderEnrollStatus();
+    }
+  }
+
+
+  await Promise.all(
+    Array.from(
+      { length: Math.min(STATUS_CONCURRENCY, targets.length) },
+      worker
+    )
+  );
+
+
+  if (runId !== statusRunId) return;
+
+
+  statusLoading = false;
+  statusController = null;
+
+
+  if (failed === targets.length) {
+    showStatusListMessage(
+      "辨識主機連線失敗，無法查詢註冊狀態。請確認電腦與樹莓派在同一個網路。",
+      "error"
+    );
+  } else if (failed) {
+    showStatusListMessage(
+      `${failed} 位學生查詢失敗，可按「重新查詢」再試一次。`,
+      "error"
+    );
+  } else {
+    showStatusListMessage(
+      "已更新：" + new Date().toLocaleTimeString("zh-TW", {
+        timeZone: "Asia/Taipei",
+        hour12: false
+      }),
+      "ok"
+    );
+  }
+
+
+  renderEnrollStatus();
+  updateEnrollButtons();
+}
+
+
+// 刪除單一學號的人臉資料（樹莓派端會先自動備份）
+async function deleteFace(row) {
+  if (!adminVerified || running || deleting || statusLoading) return;
+
+
+  if (!confirm(
+    `確定要刪除學號 ${row.sid}（${row.name || "—"}）的人臉資料嗎？\n\n` +
+    "刪除後此學號將無法刷臉進門，需重新註冊。\n" +
+    "系統會先自動備份；不影響學生帳號與辨識紀錄。"
+  )) return;
+
+
+  let recheck = false;
+
+
+  deleting = true;
+  showStatusListMessage(`正在刪除學號 ${row.sid} 的人臉資料…`);
+  renderEnrollStatus();
+  updateEnrollButtons();
+
+
+  try {
+    uploadController = new AbortController();
+
+
+    const form = new FormData();
+    form.append("name", row.sid);
+
+
+    const { response, data } = await requestJson(
+      "/enroll/delete",
+      { method: "POST", body: form },
+      30000,
+      uploadController
+    );
+
+
+    if (response.ok && data.ok === true) {
+      enrollStatus.set(row.sid, { state: "none" });
+
+
+      showStatusListMessage(
+        `已刪除學號 ${row.sid}（${row.name || "—"}）的人臉資料，舊資料已備份。`,
+        "ok"
+      );
+    } else if (
+      response.status === 404 ||
+      data.error === "not_enrolled"
+    ) {
+      enrollStatus.set(row.sid, { state: "none" });
+
+
+      showStatusListMessage(
+        `學號 ${row.sid} 已不存在人臉資料，未做任何變更。`,
+        "neutral"
+      );
+    } else if (data.error === "backup_failed") {
+      showStatusListMessage(
+        "備份失敗，已取消刪除，資料未變更。請查看樹莓派服務紀錄。",
+        "error"
+      );
+    } else {
+      showStatusListMessage(
+        "刪除失敗：" + (data.error || `HTTP ${response.status}`),
+        "error"
+      );
+    }
+  } catch (error) {
+    // 沒有明確回應：清除舊狀態，稍後自動重新查詢確認
+    enrollStatus.delete(row.sid);
+    recheck = true;
+
+
+    showStatusListMessage(
+      "未取得明確回應，結果待確認，正在重新查詢該學號…",
+      "error"
+    );
+  } finally {
+    uploadController = null;
+    deleting = false;
+    renderEnrollStatus();
+    updateEnrollButtons();
+  }
+
+
+  if (recheck) refreshEnrollStatus();
+}
+
+
+$("statusRefreshBtn").addEventListener("click", () => {
+  refreshEnrollStatus(true);
+});
+
+
+$("statusSearch").addEventListener("input", renderEnrollStatus);
+$("statusListFilter").addEventListener("change", renderEnrollStatus);
+
+
 $("startEnrollBtn").addEventListener("click", async () => {
-  if (running || !adminVerified) return;
+  if (running || deleting || !adminVerified) return;
+
 
   const pending = entries.filter(entry => entry.status === "待處理");
   if (!pending.length) return;
+
 
   if (!confirm(
     `即將處理 ${pending.length} 張照片。\n` +
     "已註冊學號會跳過，請勿同時從其他頁面修改人臉。"
   )) return;
 
+
+  abortStatusQueries();
   running = true;
   let stopped = false;
   $("enrollMessage").textContent = "正在處理，請勿關閉頁面。";
+  renderEnrollStatus();
   updateEnrollButtons();
+
 
   try {
     for (const entry of pending) {
@@ -892,11 +1675,14 @@ $("startEnrollBtn").addEventListener("click", async () => {
         break;
       }
 
+
       entry.status = "查詢中";
       renderEnroll();
 
+
       try {
         uploadController = new AbortController();
+
 
         const { response, data } = await requestJson(
           "/enroll/status?name=" + encodeURIComponent(entry.sid),
@@ -905,6 +1691,7 @@ $("startEnrollBtn").addEventListener("click", async () => {
           uploadController
         );
 
+
         if (!response.ok || data.ok !== true ||
             typeof data.enrolled !== "boolean") {
           throw new Error(
@@ -912,9 +1699,10 @@ $("startEnrollBtn").addEventListener("click", async () => {
           );
         }
 
+
         if (data.enrolled) {
           entry.status = "已註冊，跳過";
-          entry.detail = `保留原資料；樣本數 ${data.samples ?? "未提供"}。`;
+          entry.detail = "保留原資料，未重複註冊。";
           renderEnroll();
           continue;
         }
@@ -927,21 +1715,26 @@ $("startEnrollBtn").addEventListener("click", async () => {
         break;
       }
 
+
       if (!adminVerified) {
         entry.status = "待處理";
         stopped = true;
         break;
       }
 
+
       entry.status = "上傳中";
       renderEnroll();
+
 
       const form = new FormData();
       form.append("name", entry.sid);
       form.append("image", entry.file, entry.sid + ".jpg");
 
+
       try {
         uploadController = new AbortController();
+
 
         const { response, data } = await requestJson(
           "/enroll",
@@ -950,9 +1743,10 @@ $("startEnrollBtn").addEventListener("click", async () => {
           uploadController
         );
 
+
         if (response.ok && data.ok === true) {
           entry.status = "成功";
-          entry.detail = `註冊完成；樣本數 ${data.samples ?? "未提供"}。`;
+          entry.detail = "註冊完成。";
         } else if (
           response.status === 409 ||
           data.error === "already_enrolled"
@@ -973,6 +1767,7 @@ $("startEnrollBtn").addEventListener("click", async () => {
         break;
       }
 
+
       renderEnroll();
       await new Promise(resolve => setTimeout(resolve, 500));
     }
@@ -980,23 +1775,38 @@ $("startEnrollBtn").addEventListener("click", async () => {
     uploadController = null;
     running = false;
 
+
     if (!stopped) {
       $("enrollMessage").textContent =
         "處理完成。請查看各筆結果，並下載 CSV 留存。";
     }
 
+
+    // 本次處理過的學號，清掉舊狀態後重新查詢
+    for (const entry of entries) {
+      if (["成功", "已註冊，跳過", "結果待確認"].includes(entry.status)) {
+        enrollStatus.delete(entry.sid);
+      }
+    }
+
+
     renderEnroll();
+    renderEnrollStatus();
+    refreshEnrollStatus();
   }
 });
 
+
 $("downloadBtn").addEventListener("click", () => {
-  if (running || !entries.length) return;
+  if (running || deleting || !entries.length) return;
+
 
   function csvCell(value) {
     let text = String(value ?? "");
     if (/^[=+\-@\t\r]/.test(text)) text = "'" + text;
     return '"' + text.replaceAll('"', '""') + '"';
   }
+
 
   const rows = [
     ["照片檔名", "學號", "狀態", "說明"],
@@ -1008,29 +1818,37 @@ $("downloadBtn").addEventListener("click", () => {
     ])
   ];
 
+
   const csv = "\uFEFF" +
     rows.map(row => row.map(csvCell).join(",")).join("\r\n");
+
 
   const url = URL.createObjectURL(
     new Blob([csv], { type: "text/csv;charset=utf-8;" })
   );
+
 
   const link = document.createElement("a");
   link.href = url;
   link.download = "人臉照片註冊結果.csv";
   link.click();
 
+
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 });
 
+
 // ==================== 登入與登出 ====================
+
 
 $("adminLoginForm").addEventListener("submit", async event => {
   event.preventDefault();
 
+
   $("authError").classList.add("hidden");
   $("adminLoginBtn").disabled = true;
   $("adminLoginBtn").textContent = "驗證中…";
+
 
   try {
     await signInWithEmailAndPassword(
@@ -1048,28 +1866,37 @@ $("adminLoginForm").addEventListener("submit", async event => {
   }
 });
 
+
 onAuthStateChanged(auth, async user => {
   const version = ++authVersion;
   showAuthPanel();
 
+
   if (!user) return;
 
+
   setConnection("正在確認管理員權限…", "bg-amber-400");
+
 
   try {
     const tokenResult = await user.getIdTokenResult(true);
 
+
     if (version !== authVersion ||
         auth.currentUser?.uid !== user.uid) return;
+
 
     if (tokenResult.claims.admin !== true) {
       showAuthPanel("此帳號沒有 admin 管理員權限。");
       return;
     }
 
+
     adminVerified = true;
     $("authPanel").classList.add("hidden");
     $("workspace").classList.remove("hidden");
+    setTabBarVisible(true);
+
 
     switchTab(activeTab);
     updateEnrollButtons();
@@ -1081,13 +1908,17 @@ onAuthStateChanged(auth, async user => {
   }
 });
 
+
 async function logout() {
-  if (running && !confirm(
-    "照片正在處理。離開可能無法取得最後一筆結果，確定要登出？"
+  if ((running || deleting) && !confirm(
+    "照片或刪除作業正在處理。離開可能無法取得最後一筆結果，確定要登出？"
   )) return;
 
+
   uploadController?.abort();
+  abortStatusQueries();
   stopRecordsListener();
+
 
   try {
     await signOut(auth);
@@ -1098,25 +1929,32 @@ async function logout() {
   }
 }
 
+
 $("logoutBtn").addEventListener("click", logout);
 $("mobileLogoutBtn").addEventListener("click", logout);
 
+
 window.addEventListener("beforeunload", event => {
-  if (!running) return;
+  if (!running && !deleting) return;
   event.preventDefault();
   event.returnValue = "";
 });
 
+
 window.addEventListener("pagehide", () => {
   stopRecordsListener();
   uploadController?.abort();
+  abortStatusQueries();
 });
+
 
 window.addEventListener("pageshow", event => {
   if (event.persisted && adminVerified) startRecordsListener();
 });
 
+
 renderEnroll();
+renderEnrollStatus();
 icons();
 </script>
 </body>

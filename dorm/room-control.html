@@ -18,6 +18,11 @@
       cursor: not-allowed;
       opacity: 0.55;
     }
+
+    .bulb-glow-on {
+      box-shadow: 0 0 0 6px rgba(251, 191, 36, 0.25),
+                  0 0 32px 10px rgba(251, 191, 36, 0.55);
+    }
   </style>
 </head>
 
@@ -90,9 +95,7 @@
     const LIGHT_TOPIC = "smartdorm/411220413/relay3";
     const FAN_TOPIC = "smartdorm/411220413/fan";
 
-    // 只反轉燈光命令，不修改樹莓派、不影響風扇。
     // true：網頁開燈發 OFF；網頁關燈發 ON。
-    // 日後若修正接線、恢復正常方向，改成 false 即可。
     const LIGHT_COMMAND_INVERTED = true;
 
     const MQTT_CLIENT_ID =
@@ -108,136 +111,119 @@
 
     // =========================================================
     // 設備狀態
-    // true / false 代表網頁希望設備開啟 / 關閉，
-    // 不代表燈光 MQTT 命令 ON / OFF。
+    // light / fan：true / false
+    // ac："off" 關 / "auto" 自動 / "on" 開
     // =========================================================
     const defaultControl = {
       light: false,
-      door: true,
-      ac: true,
+      ac: "off",
       fan: false
     };
+
+    function normalizeAc(value) {
+      if (value === "on" || value === "auto" || value === "off") return value;
+      if (value === true) return "on";
+      return "off";
+    }
 
     let controlState = { ...defaultControl };
     let shellBuilt = false;
     let controlsBusy = false;
     let controlsReady = false;
 
-    const scenes = {
-      morning: {
-        name: "早晨模式",
-        desc: "開燈、上鎖，清爽迎接早晨",
-        icon: "sun",
-        iconWrap: "bg-blue-50 text-blue-600",
-        state: {
-          light: true,
-          door: true,
-          ac: false,
-          fan: false
-        }
-      },
-      sleep: {
-        name: "睡眠模式",
-        desc: "關燈、上鎖、關冷氣、關風扇，好眠",
-        icon: "moon",
-        iconWrap: "bg-blue-50 text-blue-600",
-        state: {
-          light: false,
-          door: true,
-          ac: false,
-          fan: false
-        }
-      },
-      study: {
-        name: "讀書模式",
-        desc: "開燈、上鎖、開冷氣，專心學習",
-        icon: "book-open",
-        iconWrap: "bg-blue-50 text-blue-600",
-        state: {
-          light: true,
-          door: true,
-          ac: true,
-          fan: false
-        }
-      },
-      relax: {
-        name: "放鬆模式",
-        desc: "開燈、解鎖、關冷氣、開風扇，輕鬆休息",
-        icon: "sofa",
-        iconWrap: "bg-blue-50 text-blue-600",
-        state: {
-          light: true,
-          door: false,
-          ac: false,
-          fan: true
-        }
-      }
-    };
-
-    const deviceCards = [
+    // =========================================================
+    // 冷氣模式外觀
+    // =========================================================
+    const acModes = [
       {
-        key: "light",
-        title: "電燈",
-        icon: "lightbulb",
-        activeColor: "bg-cyan-500"
+        value: "off",
+        label: "關",
+        icon: "power",
+        activeBtn: "bg-gray-500 text-white shadow-md",
+        badge: "bg-gray-100 text-gray-600 border-gray-200",
+        card: "border-gray-200 bg-white",
+        iconWrap: "bg-gray-100 text-gray-400",
+        title: "冷氣已關閉",
+        desc: "目前不會運轉，節省用電。"
       },
       {
-        key: "door",
-        title: "門鎖",
-        icon: "lock",
-        activeColor: "bg-blue-500"
+        value: "auto",
+        label: "自動",
+        icon: "sparkles",
+        activeBtn: "bg-emerald-500 text-white shadow-md",
+        badge: "bg-emerald-50 text-emerald-700 border-emerald-200",
+        card: "border-emerald-300 bg-emerald-50/50",
+        iconWrap: "bg-emerald-100 text-emerald-600",
+        title: "自動模式",
+        desc: "依室內溫度自動調整，兼顧舒適與節能。"
       },
       {
-        key: "ac",
-        title: "冷氣",
-        icon: "wind",
-        activeColor: "bg-cyan-500"
-      },
-      {
-        key: "fan",
-        title: "電風扇",
-        icon: "fan",
-        activeColor: "bg-cyan-500"
+        value: "on",
+        label: "開",
+        icon: "snowflake",
+        activeBtn: "bg-sky-500 text-white shadow-md",
+        badge: "bg-sky-50 text-sky-700 border-sky-200",
+        card: "border-sky-300 bg-sky-50/50",
+        iconWrap: "bg-sky-100 text-sky-600",
+        title: "冷氣運轉中",
+        desc: "持續製冷運轉。"
       }
     ];
 
-    const navItems = [
-      {
-        href: "./dashboard.html",
-        icon: "layout-dashboard",
-        label: "首頁 Dashboard"
+    function getAcMode(value) {
+      return acModes.find((m) => m.value === value) || acModes[0];
+    }
+
+    // =========================================================
+    // 情境模式
+    // =========================================================
+    const scenes = {
+      home: {
+        name: "在家模式",
+        desc: "開燈、開風扇、冷氣開",
+        icon: "house",
+        btnClass:
+          "border-amber-200 hover:border-amber-400 hover:bg-amber-50/40",
+        iconWrap: "bg-amber-50 text-amber-600",
+        state: { light: true, ac: "on", fan: true }
       },
-      {
-        href: "./room-control.html",
-        icon: "home",
-        label: "房間控制",
-        active: true
+      away: {
+        name: "外出模式",
+        desc: "關燈、關風扇、冷氣關",
+        icon: "door-open",
+        btnClass:
+          "border-rose-200 hover:border-rose-400 hover:bg-rose-50/40",
+        iconWrap: "bg-rose-50 text-rose-600",
+        state: { light: false, ac: "off", fan: false }
       },
-      {
-        href: "./energy.html",
-        icon: "zap",
-        label: "能源監控"
+      sleep: {
+        name: "睡眠模式",
+        desc: "關燈、開風扇、冷氣自動",
+        icon: "moon",
+        btnClass:
+          "border-indigo-200 hover:border-indigo-400 hover:bg-indigo-50/40",
+        iconWrap: "bg-indigo-50 text-indigo-600",
+        state: { light: false, ac: "auto", fan: true }
       },
-      {
-        href: "./package.html",
-        icon: "package",
-        label: "包裹管理"
-      },
-      {
-        href: "./maintenance.html",
-        icon: "wrench",
-        label: "維修報修"
-      },
-      {
-        href: "./visitor.html",
-        icon: "users",
-        label: "訪客管理"
-      },
-      {
-        href: "./medical.html",
-        icon: "heart-pulse",
-        label: "緊急通知"
+      eco: {
+        name: "節能模式",
+        desc: "開燈、開風扇、冷氣自動",
+        icon: "leaf",
+        btnClass:
+          "border-emerald-200 hover:border-emerald-400 hover:bg-emerald-50/40",
+        iconWrap: "bg-emerald-50 text-emerald-600",
+        state: { light: true, ac: "auto", fan: true }
       }
+    };
+
+    const navItems = [
+      { href: "./dashboard.html", icon: "layout-dashboard", label: "首頁 Dashboard" },
+      { href: "./room-control.html", icon: "home", label: "房間控制", active: true },
+      { href: "./energy.html", icon: "zap", label: "能源監控" },
+      { href: "./package.html", icon: "package", label: "包裹管理" },
+      { href: "./maintenance.html", icon: "wrench", label: "維修報修" },
+      { href: "./visitor.html", icon: "users", label: "訪客管理" },
+      { href: "./medical.html", icon: "heart-pulse", label: "緊急通知" }
     ];
 
     function escapeHtml(value) {
@@ -264,30 +250,18 @@
         : studentId;
     }
 
-    function switchClass(isOn, activeColor = "bg-cyan-500") {
+    function switchClass(isOn, activeColor) {
       return `
-        relative inline-flex h-7 w-12 items-center rounded-full transition-colors
+        relative inline-flex h-8 w-14 items-center rounded-full transition-colors
         ${isOn ? activeColor : "bg-gray-300"}
       `;
     }
 
     function knobClass(isOn) {
       return `
-        inline-block h-5 w-5 transform rounded-full bg-white transition
-        ${isOn ? "translate-x-6" : "translate-x-1"}
+        inline-block h-6 w-6 transform rounded-full bg-white shadow transition
+        ${isOn ? "translate-x-7" : "translate-x-1"}
       `;
-    }
-
-    function deviceStatusLabel(key, value) {
-      if (key === "door") {
-        return value ? "已上鎖" : "已解鎖";
-      }
-
-      if (key === "ac" || key === "fan") {
-        return value ? "運轉中" : "已關閉";
-      }
-
-      return value ? "已開啟" : "已關閉";
     }
 
     function mqttStatusClass() {
@@ -302,8 +276,6 @@
 
     // =========================================================
     // MQTT 發送
-    // callback 完成只代表用戶端發送流程完成，
-    // 不代表樹莓派已回報設備實際狀態。
     // =========================================================
     function publishMqttCommand(topic, payload, deviceName) {
       return new Promise((resolve, reject) => {
@@ -320,10 +292,7 @@
           mqttClient.publish(
             topic,
             payload,
-            {
-              qos: 0,
-              retain: false
-            },
+            { qos: 0, retain: false },
             (error) => {
               clearTimeout(timer);
 
@@ -354,11 +323,7 @@
         `[燈光] 網頁設定=${isOn ? "開燈" : "關燈"}，發送=${payload}`
       );
 
-      return publishMqttCommand(
-        LIGHT_TOPIC,
-        payload,
-        "模型燈"
-      );
+      return publishMqttCommand(LIGHT_TOPIC, payload, "模型燈");
     }
 
     function publishFanState(isOn) {
@@ -420,6 +385,165 @@
     }
 
     // =========================================================
+    // 設備卡片
+    // =========================================================
+        function renderLightCard(disabled) {
+        const on = controlState.light;
+
+        return `
+          <div
+            data-device="light"
+            role="switch"
+            tabindex="${disabled ? "-1" : "0"}"
+            aria-checked="${on}"
+            aria-label="切換電燈"
+            aria-disabled="${disabled}"
+            class="select-none rounded-2xl border-2 shadow-sm px-6 py-6 transition-all duration-300 ${
+              disabled
+                ? "opacity-60 cursor-not-allowed"
+                : "cursor-pointer hover:shadow-md active:scale-[0.99]"
+            } ${
+              on
+                ? "border-amber-300 bg-gradient-to-br from-amber-50 to-yellow-50"
+                : "border-gray-200 bg-white hover:border-amber-200"
+            }"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300 ${
+                  on
+                    ? "bg-amber-400 text-white bulb-glow-on"
+                    : "bg-gray-100 text-gray-400"
+                }">
+                  <i data-lucide="lightbulb" class="w-8 h-8"></i>
+                </div>
+
+                <div>
+                  <h4 class="text-lg font-semibold text-gray-900">電燈</h4>
+                  <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full border text-xs font-bold ${
+                    on
+                      ? "bg-amber-100 text-amber-700 border-amber-200"
+                      : "bg-gray-100 text-gray-500 border-gray-200"
+                  }">
+                    <span class="w-1.5 h-1.5 rounded-full ${
+                      on ? "bg-amber-500 animate-pulse" : "bg-gray-400"
+                    }"></span>
+                    ${on ? "亮燈中" : "已關閉"}
+                  </span>
+                  <p class="mt-1 text-xs text-gray-400">點擊方塊即可切換</p>
+                </div>
+              </div>
+
+              <span class="${switchClass(on, "bg-amber-400")}">
+                <span class="${knobClass(on)}"></span>
+              </span>
+            </div>
+          </div>
+        `;
+      }
+
+    function renderAcCard(disabled) {
+      const current = getAcMode(controlState.ac);
+
+      return `
+        <div class="rounded-2xl border-2 shadow-sm px-6 py-6 transition-all duration-300 ${current.card}">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-4">
+              <div class="w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${current.iconWrap}">
+                <i data-lucide="${current.icon}" class="w-8 h-8 ${
+                  current.value === "on" ? "animate-pulse" : ""
+                }"></i>
+              </div>
+
+              <div>
+                <h4 class="text-lg font-semibold text-gray-900">冷氣</h4>
+                <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full border text-xs font-bold ${current.badge}">
+                  ${current.title}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-3 gap-2 p-1.5 rounded-xl bg-gray-100">
+            ${acModes.map((mode) => {
+              const active = controlState.ac === mode.value;
+
+              return `
+                <button
+                  type="button"
+                  data-ac="${mode.value}"
+                  aria-pressed="${active}"
+                  ${disabled ? "disabled" : ""}
+                  class="flex items-center justify-center gap-1.5 py-2.5 rounded-lg text-sm font-bold transition-all ${
+                    active
+                      ? mode.activeBtn
+                      : "text-gray-500 hover:bg-white hover:text-gray-800"
+                  }"
+                >
+                  <i data-lucide="${mode.icon}" class="w-4 h-4"></i>
+                  ${mode.label}
+                </button>
+              `;
+            }).join("")}
+          </div>
+
+          <p class="mt-3 text-sm text-gray-500">${current.desc}</p>
+        </div>
+      `;
+    }
+
+        function renderFanCard(disabled) {
+        const on = controlState.fan;
+
+        return `
+          <div
+            data-device="fan"
+            role="switch"
+            tabindex="${disabled ? "-1" : "0"}"
+            aria-checked="${on}"
+            aria-label="切換電風扇"
+            aria-disabled="${disabled}"
+            class="select-none rounded-2xl border-2 shadow-sm px-6 py-6 transition-all duration-300 ${
+              disabled
+                ? "opacity-60 cursor-not-allowed"
+                : "cursor-pointer hover:shadow-md active:scale-[0.99]"
+            } ${
+              on
+                ? "border-teal-300 bg-teal-50/50"
+                : "border-gray-200 bg-white hover:border-teal-200"
+            }"
+          >
+            <div class="flex items-center justify-between">
+              <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-2xl flex items-center justify-center transition-all duration-300 ${
+                  on ? "bg-teal-100 text-teal-600" : "bg-gray-100 text-gray-400"
+                }">
+                  <i data-lucide="fan" class="w-8 h-8 ${
+                    on ? "animate-spin" : ""
+                  }"></i>
+                </div>
+
+                <div>
+                  <h4 class="text-lg font-semibold text-gray-900">電風扇</h4>
+                  <span class="inline-flex items-center gap-1.5 mt-1 px-2.5 py-0.5 rounded-full border text-xs font-bold ${
+                    on
+                      ? "bg-teal-100 text-teal-700 border-teal-200"
+                      : "bg-gray-100 text-gray-500 border-gray-200"
+                  }">
+                    ${on ? "運轉中" : "已關閉"}
+                  </span>
+                  <p class="mt-1 text-xs text-gray-400">點擊方塊即可切換</p>
+                </div>
+              </div>
+
+              <span class="${switchClass(on, "bg-teal-500")}">
+                <span class="${knobClass(on)}"></span>
+              </span>
+            </div>
+          </div>
+        `;
+      }
+    // =========================================================
     // 介面
     // =========================================================
     function renderMainContent() {
@@ -433,7 +557,7 @@
 
           <p class="text-sm text-gray-500 mb-4">
             可快速套用房間狀態；燈光與風扇會發送實體設備控制命令，
-            門鎖與冷氣目前僅更新網頁設定。
+            冷氣目前僅更新網頁設定。
           </p>
 
           <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
@@ -442,7 +566,7 @@
                 type="button"
                 data-scene="${sceneKey}"
                 ${disabled ? "disabled" : ""}
-                class="scene-btn text-left bg-white rounded-2xl border border-gray-200 shadow-sm p-6 hover:shadow-md hover:-translate-y-0.5 transition-all"
+                class="scene-btn text-left bg-white rounded-2xl border-2 ${scene.btnClass} shadow-sm p-6 hover:shadow-md hover:-translate-y-0.5 active:scale-[0.98] transition-all"
               >
                 <div class="flex items-start gap-4">
                   <div class="w-12 h-12 rounded-xl ${scene.iconWrap} flex items-center justify-center shrink-0">
@@ -471,43 +595,10 @@
             </span>
           </div>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-            ${deviceCards.map((device) => `
-              <div class="bg-white rounded-2xl border border-gray-100 shadow-sm px-6 py-5">
-                <div class="flex items-center justify-between">
-                  <div class="flex items-center gap-4">
-                    <div class="w-11 h-11 rounded-xl bg-gray-50 flex items-center justify-center text-gray-600">
-                      <i data-lucide="${device.icon}" class="w-5 h-5"></i>
-                    </div>
-
-                    <div>
-                      <h4 class="text-lg font-semibold text-gray-900">
-                        ${device.title}
-                      </h4>
-
-                      <p class="text-sm text-gray-500">
-                        ${deviceStatusLabel(device.key, controlState[device.key])}
-                      </p>
-                    </div>
-                  </div>
-
-                  <button
-                    type="button"
-                    data-device="${device.key}"
-                    role="switch"
-                    aria-checked="${Boolean(controlState[device.key])}"
-                    aria-label="切換${device.title}"
-                    ${disabled ? "disabled" : ""}
-                    class="${switchClass(
-                      controlState[device.key],
-                      device.activeColor
-                    )}"
-                  >
-                    <span class="${knobClass(controlState[device.key])}"></span>
-                  </button>
-                </div>
-              </div>
-            `).join("")}
+          <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            ${renderLightCard(disabled)}
+            ${renderAcCard(disabled)}
+            ${renderFanCard(disabled)}
           </div>
         </section>
 
@@ -672,7 +763,6 @@
 
     // =========================================================
     // Firebase 儲存
-    // MQTT 已送出後，Firebase 儲存失敗不會反轉實體命令。
     // =========================================================
     async function saveControlState(roomKey, state) {
       await setDoc(
@@ -681,14 +771,11 @@
           room: userData.room || "",
           studentId,
           light: Boolean(state.light),
-          door: Boolean(state.door),
-          ac: Boolean(state.ac),
+          ac: normalizeAc(state.ac),
           fan: Boolean(state.fan),
           updatedAt: new Date().toISOString()
         },
-        {
-          merge: true
-        }
+        { merge: true }
       );
     }
 
@@ -742,6 +829,25 @@
       }
     }
 
+    async function setAcMode(mode) {
+      if (controlsBusy || !controlsReady) return;
+      if (controlState.ac === mode) return;
+
+      const roomKey = getRoomKey();
+
+      controlsBusy = true;
+      updateContent();
+
+      try {
+        // 冷氣目前僅更新網頁設定，不發送 MQTT
+        controlState.ac = normalizeAc(mode);
+        await persistCurrentState(roomKey);
+      } finally {
+        controlsBusy = false;
+        updateContent();
+      }
+    }
+
     async function applyScene(sceneKey) {
       if (controlsBusy || !controlsReady) return;
 
@@ -755,16 +861,13 @@
       updateContent();
 
       try {
-        // 每次套用情境都重新發送兩台設備的命令，
-        // 避免網頁舊設定與實體設備不同時跳過命令。
         await publishLightState(targetState.light);
         controlState.light = targetState.light;
 
         await publishFanState(targetState.fan);
         controlState.fan = targetState.fan;
 
-        controlState.door = targetState.door;
-        controlState.ac = targetState.ac;
+        controlState.ac = normalizeAc(targetState.ac);
 
         await persistCurrentState(roomKey);
       } catch (error) {
@@ -780,23 +883,35 @@
       }
     }
 
-    function bindControls() {
-      document.querySelectorAll("[data-device]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          toggleDevice(btn.dataset.device);
-        });
-      });
+        function bindControls() {
+        document.querySelectorAll("[data-device]").forEach((el) => {
+          el.addEventListener("click", () => {
+            toggleDevice(el.dataset.device);
+          });
 
-      document.querySelectorAll("[data-scene]").forEach((btn) => {
-        btn.addEventListener("click", () => {
-          applyScene(btn.dataset.scene);
+          el.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              toggleDevice(el.dataset.device);
+            }
+          });
         });
-      });
-    }
+
+        document.querySelectorAll("[data-ac]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            setAcMode(btn.dataset.ac);
+          });
+        });
+
+        document.querySelectorAll("[data-scene]").forEach((btn) => {
+          btn.addEventListener("click", () => {
+            applyScene(btn.dataset.scene);
+          });
+        });
+      }
 
     // =========================================================
     // 啟動
-    // 不會在載入網頁或 MQTT 重連時自動切換設備。
     // =========================================================
     renderShell();
     startMqtt();
@@ -833,7 +948,6 @@
 
         const roomKey = getRoomKey();
 
-        // 同一房間的使用者資料更新，不覆蓋剛完成的操作設定。
         if (loadedRoomKey === roomKey) {
           updateContent();
           return;
@@ -854,10 +968,7 @@
           controlState = {
             light: typeof saved.light === "boolean"
               ? saved.light : defaultControl.light,
-            door: typeof saved.door === "boolean"
-              ? saved.door : defaultControl.door,
-            ac: typeof saved.ac === "boolean"
-              ? saved.ac : defaultControl.ac,
+            ac: normalizeAc(saved.ac),
             fan: typeof saved.fan === "boolean"
               ? saved.fan : defaultControl.fan
           };
